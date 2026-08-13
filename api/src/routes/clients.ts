@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { db } from '../db'
-import { clients } from '../db/schema'
-import { scopedTo } from '../lib/tenant'
+import { db } from '../db/index.js'
+import { clients } from '../db/schema.js'
+import { scopedTo } from '../lib/tenant.js'
 
 const router = Router()
 

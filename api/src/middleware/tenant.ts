@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express'
 import { eq } from 'drizzle-orm'
-import { db } from '../db'
-import { businesses } from '../db/schema'
-import { HttpError } from '../lib/http-error'
+import { db } from '../db/index.js'
+import { businesses } from '../db/schema.js'
+import { HttpError } from '../lib/http-error.js'
 
 /**
  * Resolves req.businessId for every request before it reaches a route handler.

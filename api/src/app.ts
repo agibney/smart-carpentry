@@ -1,10 +1,10 @@
 import cors from 'cors'
 import express from 'express'
-import businessesRouter from './routes/businesses'
-import clientsRouter from './routes/clients'
-import projectsRouter from './routes/projects'
-import { errorHandler } from './lib/http-error'
-import { resolveBusiness } from './middleware/tenant'
+import businessesRouter from './routes/businesses.js'
+import clientsRouter from './routes/clients.js'
+import projectsRouter from './routes/projects.js'
+import { errorHandler } from './lib/http-error.js'
+import { resolveBusiness } from './middleware/tenant.js'
 
 export const app = express()
 

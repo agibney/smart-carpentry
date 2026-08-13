@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { db } from '../db'
-import { businesses } from '../db/schema'
-import { HttpError } from '../lib/http-error'
-import { requireAdmin } from '../middleware/admin'
+import { db } from '../db/index.js'
+import { businesses } from '../db/schema.js'
+import { HttpError } from '../lib/http-error.js'
+import { requireAdmin } from '../middleware/admin.js'
 
 // Tenant management — creating/looking up businesses themselves, not acting within one.
 // Deliberately not mounted behind the tenant-resolving middleware (see app.ts); gated by

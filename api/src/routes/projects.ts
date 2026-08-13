@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { Router } from 'express'
-import { db } from '../db'
-import { clients, projects } from '../db/schema'
-import { HttpError } from '../lib/http-error'
-import { scopedTo } from '../lib/tenant'
+import { db } from '../db/index.js'
+import { clients, projects } from '../db/schema.js'
+import { HttpError } from '../lib/http-error.js'
+import { scopedTo } from '../lib/tenant.js'
 
 const router = Router()
 

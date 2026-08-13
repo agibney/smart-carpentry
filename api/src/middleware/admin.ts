@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express'
-import { HttpError } from '../lib/http-error'
+import { HttpError } from '../lib/http-error.js'
 
 /**
  * Gates business-management routes (create/list tenants) — a different boundary than
