@@ -1,13 +1,14 @@
 import { eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db'
-import { projects } from '../db/schema'
+import { clients, projects } from '../db/schema'
 import { HttpError } from '../lib/http-error'
+import { scopedTo } from '../lib/tenant'
 
 const router = Router()
 
 router.get('/', async (req, res) => {
-  res.json(await db.select().from(projects))
+  res.json(await db.select().from(projects).where(scopedTo(projects.businessId, req.businessId)))
 })
 
 router.post('/', async (req, res) => {
@@ -17,9 +18,21 @@ router.post('/', async (req, res) => {
     throw new HttpError(400, 'clientId and title are required')
   }
 
+  // clientId is caller-supplied — without this check a request could link a project to
+  // another business's client id, which would leak that client's data into this business's
+  // project views via the client relation. Confirm the client is actually ours first.
+  const client = await db.query.clients.findFirst({
+    where: scopedTo(clients.businessId, req.businessId, eq(clients.id, body.clientId)),
+  })
+
+  if (!client) {
+    throw new HttpError(400, 'Invalid clientId')
+  }
+
   const [project] = await db
     .insert(projects)
     .values({
+      businessId: req.businessId,
       clientId: body.clientId,
       title: body.title,
       status: body.status || 'lead',
@@ -33,7 +46,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   const project = await db.query.projects.findFirst({
-    where: eq(projects.id, req.params.id),
+    where: scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)),
     with: {
       // Never serialize the client's *Encrypted PII columns (see CLAUDE.md convention) —
       // no encryption helper exists yet, so nothing raw should ship to the browser at all.

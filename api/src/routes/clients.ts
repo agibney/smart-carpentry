@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { db } from '../db'
 import { clients } from '../db/schema'
+import { scopedTo } from '../lib/tenant'
 
 const router = Router()
 
@@ -15,6 +16,7 @@ router.get('/', async (req, res) => {
       createdAt: clients.createdAt,
     })
     .from(clients)
+    .where(scopedTo(clients.businessId, req.businessId))
 
   res.json(rows)
 })

@@ -11,12 +11,22 @@ Vue experience is already covered) and to learn agentic AI patterns.
 - `api/` — Express, Drizzle ORM, Postgres (docker-compose). Replaced the
   original Nitro server routes so the backend is a standalone service any
   frontend can call.
-- Schema: api/src/db/schema.ts — clients, projects, bids, bid_line_items,
-  subcontractors, project_subcontractors, attachments
-- Multi-tenant from the start (see docs/requirements.md): every table is
-  meant to be scoped by `business_id`, even though V1 only ever has one
-  business. Not yet reflected in the schema above — flag this gap when
-  touching schema/query code rather than assuming single-tenant.
+- Schema: api/src/db/schema.ts — businesses, clients, projects, bids,
+  bid_line_items, subcontractors, project_subcontractors, attachments
+- Multi-tenant from the start (see docs/requirements.md): clients, projects,
+  bids, subcontractors, and attachments all carry `business_id` and are
+  queried through the `scopedTo` helper in api/src/lib/tenant.ts — never
+  hand-roll `eq(table.businessId, ...)`. `bid_line_items` and
+  `project_subcontractors` are scoped transitively through their parent and
+  don't carry `business_id` themselves. No login exists yet: every request
+  resolves its business via the `resolveBusiness` middleware
+  (api/src/middleware/tenant.ts), which reads an `X-Business-Id` header or
+  falls back to `DEFAULT_BUSINESS_ID` — a single business seeded by
+  migrations/0001_add_multi_tenancy.sql for V1's single-business use.
+  Creating/listing businesses themselves (not acting as one) is a separate
+  admin surface — `/api/businesses`, gated by `requireAdmin`
+  (api/src/middleware/admin.ts) via an `X-Admin-Key` header / `ADMIN_API_KEY`,
+  mounted ahead of `resolveBusiness` in app.ts since it isn't tenant-scoped.
 - `app/` — Nuxt 3 / Vue 3. Frozen reference implementation only (kept for
   side-by-side comparison / interview talking points) — not receiving new
   features going forward.
