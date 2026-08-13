@@ -5,23 +5,6 @@ const { data: projects, status, error } = await useProjects()
 
 const router = useRouter()
 
-const statusSeverity = (status: string): 'secondary' | 'info' | 'warn' | 'success' | 'danger' => {
-  switch (status) {
-    case 'lead':
-      return 'secondary'
-    case 'quoted':
-      return 'info'
-    case 'active':
-      return 'warn'
-    case 'completed':
-      return 'success'
-    case 'cancelled':
-      return 'danger'
-    default:
-      return 'secondary'
-  }
-}
-
 const formatDate = (value: string | null) => {
   if (!value) return '—'
   return new Date(value).toLocaleDateString()
@@ -34,7 +17,10 @@ const viewProject = (project: Project) => {
 
 <template>
   <div class="projects-page">
-    <h1>Projects</h1>
+    <div class="projects-page__header">
+      <h1>Projects</h1>
+      <Button label="New Project" icon="pi pi-plus" @click="router.push('/projects/create')" />
+    </div>
 
     <p v-if="error">Failed to load projects.</p>
 
@@ -43,7 +29,7 @@ const viewProject = (project: Project) => {
 
       <Column field="status" header="Status">
         <template #body="{ data }">
-          <Tag :value="data.status" :severity="statusSeverity(data.status)" />
+          <Tag :value="data.status" :severity="projectStatusSeverity(data.status)" />
         </template>
       </Column>
 
@@ -61,3 +47,11 @@ const viewProject = (project: Project) => {
     </DataTable>
   </div>
 </template>
+
+<style scoped>
+.projects-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+</style>
