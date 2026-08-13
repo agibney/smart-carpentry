@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import attachmentsRouter from './routes/attachments.js'
 import businessesRouter from './routes/businesses.js'
 import clientsRouter from './routes/clients.js'
 import projectsRouter from './routes/projects.js'
@@ -20,6 +21,7 @@ app.use(resolveBusiness)
 app.use('/api/projects', projectsRouter)
 app.use('/api/clients', clientsRouter)
 app.use('/api/subcontractors', subcontractorsRouter)
+app.use('/api/attachments', attachmentsRouter)
 
 // Must be last: Express 5 forwards rejected promises from async route handlers here automatically.
 app.use(errorHandler)
