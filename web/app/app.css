@@ -1,0 +1,60 @@
+/* Page-level layout styles ported from the old Nuxt `<style scoped>` blocks. RR7/PrimeReact has
+   no scoped-style equivalent, so these are plain global classes — same names as before. */
+
+body {
+  margin: 0;
+  padding: 2rem;
+}
+
+.projects-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 40rem;
+}
+
+.project-detail-page__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.project-detail-page__fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+}
+
+.project-detail-page__fields dt {
+  font-weight: 600;
+  color: var(--p-text-muted-color);
+}
+
+.project-detail-page__fields dd {
+  margin: 0;
+}
+
+.create-project-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 32rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

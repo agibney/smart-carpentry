@@ -6,6 +6,10 @@
 .cache
 dist
 
+# React Router dev/build outputs
+.react-router
+build
+
 # Node dependencies
 node_modules
 

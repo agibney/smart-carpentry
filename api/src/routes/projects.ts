@@ -1,0 +1,57 @@
+import { eq } from 'drizzle-orm'
+import { Router } from 'express'
+import { db } from '../db'
+import { projects } from '../db/schema'
+import { HttpError } from '../lib/http-error'
+
+const router = Router()
+
+router.get('/', async (req, res) => {
+  res.json(await db.select().from(projects))
+})
+
+router.post('/', async (req, res) => {
+  const body = req.body ?? {}
+
+  if (!body.clientId || !body.title) {
+    throw new HttpError(400, 'clientId and title are required')
+  }
+
+  const [project] = await db
+    .insert(projects)
+    .values({
+      clientId: body.clientId,
+      title: body.title,
+      status: body.status || 'lead',
+      startDate: body.startDate || null,
+      description: body.description || null,
+    })
+    .returning()
+
+  res.status(201).json(project)
+})
+
+router.get('/:id', async (req, res) => {
+  const project = await db.query.projects.findFirst({
+    where: eq(projects.id, req.params.id),
+    with: {
+      // Never serialize the client's *Encrypted PII columns (see CLAUDE.md convention) —
+      // no encryption helper exists yet, so nothing raw should ship to the browser at all.
+      client: {
+        columns: {
+          phoneEncrypted: false,
+          emailEncrypted: false,
+          addressEncrypted: false,
+        },
+      },
+    },
+  })
+
+  if (!project) {
+    throw new HttpError(404, 'Project not found')
+  }
+
+  res.json(project)
+})
+
+export default router
