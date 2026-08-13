@@ -67,4 +67,19 @@ router.get('/:id', async (req, res) => {
   res.json(project)
 })
 
+router.get('/:id/bids', async (req, res) => {
+  // Confirm the project is ours first (same guard as GET /:id) — otherwise this would leak
+  // whether a given project id exists, and its bids, to another business.
+  const project = await db.query.projects.findFirst({
+    where: scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)),
+    with: { bids: true },
+  })
+
+  if (!project) {
+    throw new HttpError(404, 'Project not found')
+  }
+
+  res.json(project.bids)
+})
+
 export default router
