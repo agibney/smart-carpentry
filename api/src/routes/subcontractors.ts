@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
 import { subcontractors } from '../db/schema.js'
@@ -53,6 +54,27 @@ router.post('/', async (req, res) => {
     })
 
   res.status(201).json(subcontractor)
+})
+
+router.get('/:id', async (req, res) => {
+  // Never serialize the *Encrypted PII columns (see CLAUDE.md convention) — no encryption
+  // helper exists yet, so nothing raw should ship to the browser at all.
+  const subcontractor = await db
+    .select({
+      id: subcontractors.id,
+      name: subcontractors.name,
+      trade: subcontractors.trade,
+      rate: subcontractors.rate,
+    })
+    .from(subcontractors)
+    .where(scopedTo(subcontractors.businessId, req.businessId, eq(subcontractors.id, req.params.id)))
+    .then((rows) => rows[0])
+
+  if (!subcontractor) {
+    throw new HttpError(404, 'Subcontractor not found')
+  }
+
+  res.json(subcontractor)
 })
 
 export default router
