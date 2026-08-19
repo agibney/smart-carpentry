@@ -56,6 +56,59 @@ router.post('/', async (req, res) => {
   res.status(201).json(subcontractor)
 })
 
+router.patch('/:id', async (req, res) => {
+  const body = req.body ?? {}
+
+  // Same guard as POST — no encryption helper exists yet, so reject contact info outright
+  // rather than writing plaintext into a column named like it's encrypted.
+  if (body.phone) {
+    throw new HttpError(400, 'Contact info (phone) is not supported yet — no encryption helper exists')
+  }
+
+  // No status field to target here (unlike bids/projects) — this patches whichever of the
+  // subcontractor's own editable fields are supplied.
+  const updates: Partial<typeof subcontractors.$inferInsert> = {}
+
+  if ('name' in body) {
+    if (!body.name) {
+      throw new HttpError(400, 'name cannot be empty')
+    }
+    updates.name = body.name
+  }
+
+  if ('trade' in body) {
+    updates.trade = body.trade || null
+  }
+
+  if ('rate' in body) {
+    updates.rate = body.rate ?? null
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new HttpError(400, 'No updatable fields provided')
+  }
+
+  // Scoped update-and-return in one query rather than fetch-then-update — the where clause
+  // already guards against updating another business's subcontractor, so an empty result
+  // here means not found (same 404 semantics as GET /:id).
+  const [subcontractor] = await db
+    .update(subcontractors)
+    .set(updates)
+    .where(scopedTo(subcontractors.businessId, req.businessId, eq(subcontractors.id, req.params.id)))
+    .returning({
+      id: subcontractors.id,
+      name: subcontractors.name,
+      trade: subcontractors.trade,
+      rate: subcontractors.rate,
+    })
+
+  if (!subcontractor) {
+    throw new HttpError(404, 'Subcontractor not found')
+  }
+
+  res.json(subcontractor)
+})
+
 router.get('/:id', async (req, res) => {
   // Never serialize the *Encrypted PII columns (see CLAUDE.md convention) — no encryption
   // helper exists yet, so nothing raw should ship to the browser at all.
