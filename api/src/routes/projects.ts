@@ -109,4 +109,37 @@ router.get('/:id/bids', async (req, res) => {
   res.json(project.bids)
 })
 
+router.delete('/:id', async (req, res) => {
+  // Confirm the project is ours first (same guard as GET /:id), and pull just enough of each
+  // dependent relation to check for blockers in the same query — bids.projectId,
+  // project_subcontractors.projectId, and attachments.projectId all reference projects with
+  // no cascade, so deleting anyway would surface as a raw Postgres FK violation.
+  const project = await db.query.projects.findFirst({
+    where: scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)),
+    with: {
+      bids: { columns: { id: true } },
+      subcontractors: { columns: { id: true } },
+      attachments: { columns: { id: true } },
+    },
+  })
+
+  if (!project) {
+    throw new HttpError(404, 'Project not found')
+  }
+
+  const blockers = [
+    project.bids.length > 0 && 'bids',
+    project.subcontractors.length > 0 && 'subcontractor assignments',
+    project.attachments.length > 0 && 'attachments',
+  ].filter(Boolean)
+
+  if (blockers.length > 0) {
+    throw new HttpError(409, `Project has ${blockers.join(', ')} and cannot be deleted`)
+  }
+
+  await db.delete(projects).where(eq(projects.id, req.params.id))
+
+  res.status(204).send()
+})
+
 export default router
