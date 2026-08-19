@@ -44,6 +44,29 @@ router.post('/', async (req, res) => {
   res.status(201).json(bid)
 })
 
+router.patch('/:id', async (req, res) => {
+  const body = req.body ?? {}
+
+  if (!body.status || typeof body.status !== 'string') {
+    throw new HttpError(400, 'status is required')
+  }
+
+  // Scoped update-and-return in one query rather than fetch-then-update — the where clause
+  // already guards against updating another business's bid, so an empty result here means
+  // not found (same 404 semantics as GET /:id).
+  const [bid] = await db
+    .update(bids)
+    .set({ status: body.status })
+    .where(scopedTo(bids.businessId, req.businessId, eq(bids.id, req.params.id)))
+    .returning()
+
+  if (!bid) {
+    throw new HttpError(404, 'Bid not found')
+  }
+
+  res.json(bid)
+})
+
 router.get('/:id', async (req, res) => {
   const bid = await db.query.bids.findFirst({
     where: scopedTo(bids.businessId, req.businessId, eq(bids.id, req.params.id)),
