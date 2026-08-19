@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { subcontractors } from '../db/schema.js'
+import { projectSubcontractors, subcontractors } from '../db/schema.js'
 import { HttpError } from '../lib/http-error.js'
 import { scopedTo } from '../lib/tenant.js'
 
@@ -128,6 +128,35 @@ router.get('/:id', async (req, res) => {
   }
 
   res.json(subcontractor)
+})
+
+router.delete('/:id', async (req, res) => {
+  // Confirm the subcontractor is ours first (same guard as GET/PATCH /:id) — otherwise this
+  // would leak whether a given subcontractor id exists, and its assignment status, to
+  // another business.
+  const subcontractor = await db.query.subcontractors.findFirst({
+    where: scopedTo(subcontractors.businessId, req.businessId, eq(subcontractors.id, req.params.id)),
+    columns: { id: true },
+  })
+
+  if (!subcontractor) {
+    throw new HttpError(404, 'Subcontractor not found')
+  }
+
+  // project_subcontractors.subcontractorId has no cascade — deleting anyway would surface as
+  // a raw Postgres FK violation. Check for an assignment first and return a clean 409 instead.
+  const assignment = await db.query.projectSubcontractors.findFirst({
+    where: eq(projectSubcontractors.subcontractorId, req.params.id),
+    columns: { id: true },
+  })
+
+  if (assignment) {
+    throw new HttpError(409, 'Subcontractor is assigned to a project and cannot be deleted')
+  }
+
+  await db.delete(subcontractors).where(eq(subcontractors.id, req.params.id))
+
+  res.status(204).send()
 })
 
 export default router
