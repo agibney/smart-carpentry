@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { clients, projects } from '../db/schema.js'
+import { clients, PROJECT_STATUSES, projects } from '../db/schema.js'
 import { HttpError } from '../lib/http-error.js'
 import { scopedTo } from '../lib/tenant.js'
 
@@ -16,6 +16,10 @@ router.post('/', async (req, res) => {
 
   if (!body.clientId || !body.title) {
     throw new HttpError(400, 'clientId and title are required')
+  }
+
+  if (body.status !== undefined && !PROJECT_STATUSES.includes(body.status)) {
+    throw new HttpError(400, `status must be one of: ${PROJECT_STATUSES.join(', ')}`)
   }
 
   // clientId is caller-supplied — without this check a request could link a project to

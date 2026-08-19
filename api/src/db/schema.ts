@@ -23,6 +23,13 @@ export const clients = pgTable('clients', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+// Kept in sync by hand with web/app/lib/types.ts's PROJECT_STATUSES (same deliberate
+// non-sharing as that file's own header comment: the frontend depends on the wire
+// contract, not this ORM type, so the two lists don't import from one another).
+export const PROJECT_STATUSES = ['lead', 'quoted', 'active', 'completed', 'cancelled'] as const
+
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
+
 export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').references(() => businesses.id).notNull(),
