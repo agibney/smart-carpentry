@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { BID_STATUSES, bids, projects } from '../db/schema.js'
+import { bidLineItems, BID_STATUSES, bids, projects } from '../db/schema.js'
 import { HttpError } from '../lib/http-error.js'
 import { scopedTo } from '../lib/tenant.js'
 
@@ -82,6 +82,29 @@ router.get('/:id', async (req, res) => {
   }
 
   res.json(bid)
+})
+
+router.delete('/:id', async (req, res) => {
+  // Confirm the bid is ours first (same guard as GET/PATCH /:id).
+  const bid = await db.query.bids.findFirst({
+    where: scopedTo(bids.businessId, req.businessId, eq(bids.id, req.params.id)),
+    columns: { id: true },
+  })
+
+  if (!bid) {
+    throw new HttpError(404, 'Bid not found')
+  }
+
+  // Unlike DELETE /api/projects/:id and /api/subcontractors/:id, this doesn't block on
+  // dependents: bid_line_items has no business_id of its own and is scoped transitively
+  // through its bid (see CLAUDE.md) — it's a child of the bid, not an independent record
+  // worth protecting, so it's deleted along with it rather than blocking the request.
+  await db.transaction(async (tx) => {
+    await tx.delete(bidLineItems).where(eq(bidLineItems.bidId, req.params.id))
+    await tx.delete(bids).where(eq(bids.id, req.params.id))
+  })
+
+  res.status(204).send()
 })
 
 export default router
