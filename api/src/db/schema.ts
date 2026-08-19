@@ -35,6 +35,13 @@ export const projects = pgTable('projects', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+// Kept in sync by hand with web/app/lib/types.ts's BID_STATUSES (same deliberate
+// non-sharing as that file's own header comment: the frontend depends on the wire
+// contract, not this ORM type, so the two lists don't import from one another).
+export const BID_STATUSES = ['draft', 'sent', 'accepted', 'rejected'] as const
+
+export type BidStatus = (typeof BID_STATUSES)[number]
+
 export const bids = pgTable('bids', {
   id: uuid('id').primaryKey().defaultRandom(),
   businessId: uuid('business_id').references(() => businesses.id).notNull(),

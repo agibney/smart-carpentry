@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../db/index.js'
-import { bids, projects } from '../db/schema.js'
+import { BID_STATUSES, bids, projects } from '../db/schema.js'
 import { HttpError } from '../lib/http-error.js'
 import { scopedTo } from '../lib/tenant.js'
 
@@ -12,6 +12,10 @@ router.post('/', async (req, res) => {
 
   if (!body.projectId) {
     throw new HttpError(400, 'projectId is required')
+  }
+
+  if (body.status !== undefined && !BID_STATUSES.includes(body.status)) {
+    throw new HttpError(400, `status must be one of: ${BID_STATUSES.join(', ')}`)
   }
 
   // totalAmount is never caller-supplied — it's owned by a pure calculation function over
@@ -47,8 +51,8 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const body = req.body ?? {}
 
-  if (!body.status || typeof body.status !== 'string') {
-    throw new HttpError(400, 'status is required')
+  if (!body.status || !BID_STATUSES.includes(body.status)) {
+    throw new HttpError(400, `status must be one of: ${BID_STATUSES.join(', ')}`)
   }
 
   // Scoped update-and-return in one query rather than fetch-then-update — the where clause
