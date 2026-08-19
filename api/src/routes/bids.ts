@@ -44,4 +44,17 @@ router.post('/', async (req, res) => {
   res.status(201).json(bid)
 })
 
+router.get('/:id', async (req, res) => {
+  const bid = await db.query.bids.findFirst({
+    where: scopedTo(bids.businessId, req.businessId, eq(bids.id, req.params.id)),
+    with: { lineItems: true },
+  })
+
+  if (!bid) {
+    throw new HttpError(404, 'Bid not found')
+  }
+
+  res.json(bid)
+})
+
 export default router
