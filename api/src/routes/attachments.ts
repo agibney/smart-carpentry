@@ -43,4 +43,26 @@ router.post('/', async (req, res) => {
   res.status(201).json(attachment)
 })
 
+router.delete('/:id', async (req, res) => {
+  // Confirm the attachment is ours first
+  const attachment = await db.query.attachments.findFirst({
+    where: scopedTo(attachments.businessId, req.businessId, eq(attachments.id, req.params.id)),
+    columns: { id: true },
+  })
+
+  if (!attachment) {
+    throw new HttpError(404, 'Attachment not found')
+  }
+
+  // Nothing else references attachments.id (unlike bid_line_items -> bids or
+  // project_subcontractors -> projects), so there's no dependent to check or cascade —
+  // this can just delete the row.
+  //
+  // This only removes the DB pointer, not the underlying object in private storage — no
+  // storage client/delete helper exists yet, same gap as POST already punting on upload.
+  await db.delete(attachments).where(eq(attachments.id, req.params.id))
+
+  res.status(204).send()
+})
+
 export default router
