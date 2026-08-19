@@ -48,6 +48,29 @@ router.post('/', async (req, res) => {
   res.status(201).json(project)
 })
 
+router.patch('/:id', async (req, res) => {
+  const body = req.body ?? {}
+
+  if (!body.status || !PROJECT_STATUSES.includes(body.status)) {
+    throw new HttpError(400, `status must be one of: ${PROJECT_STATUSES.join(', ')}`)
+  }
+
+  // Scoped update-and-return in one query rather than fetch-then-update — the where clause
+  // already guards against updating another business's project, so an empty result here
+  // means not found (same 404 semantics as GET /:id).
+  const [project] = await db
+    .update(projects)
+    .set({ status: body.status })
+    .where(scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)))
+    .returning()
+
+  if (!project) {
+    throw new HttpError(404, 'Project not found')
+  }
+
+  res.json(project)
+})
+
 router.get('/:id', async (req, res) => {
   const project = await db.query.projects.findFirst({
     where: scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)),
