@@ -6,6 +6,12 @@ export const PROJECT_STATUSES = ['lead', 'quoted', 'active', 'completed', 'cance
 
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 
+// Mirrors the bids.status lifecycle implied by the schema's sentAt column (api/src/db/schema.ts):
+// a bid is drafted, sent (sentAt gets set), then accepted or rejected by the client.
+export const BID_STATUSES = ['draft', 'sent', 'accepted', 'rejected'] as const
+
+export type BidStatus = (typeof BID_STATUSES)[number]
+
 export interface Client {
   id: string
   name: string
