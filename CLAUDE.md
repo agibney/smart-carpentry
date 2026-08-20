@@ -11,18 +11,25 @@ Vue experience is already covered) and to learn agentic AI patterns.
 - `api/` — Express, Drizzle ORM, Postgres (docker-compose). Replaced the
   original Nitro server routes so the backend is a standalone service any
   frontend can call.
-- Schema: api/src/db/schema.ts — businesses, clients, projects, bids,
-  bid_line_items, subcontractors, project_subcontractors, attachments
+- Schema: api/src/db/schema.ts — businesses, users, clients, projects,
+  materials, bids, bid_line_items, subcontractors, project_subcontractors,
+  attachments. Rebuilt from an updated ERD (docs/carpentry_app_erd_user_type.html)
+  with migration history squashed to a single fresh baseline since nothing
+  had shipped yet — see that commit for the design calls made along the way.
 - Multi-tenant from the start (see docs/requirements.md): clients, projects,
   bids, subcontractors, and attachments all carry `business_id` and are
   queried through the `scopedTo` helper in api/src/lib/tenant.ts — never
   hand-roll `eq(table.businessId, ...)`. `bid_line_items` and
   `project_subcontractors` are scoped transitively through their parent and
-  don't carry `business_id` themselves. No login exists yet: every request
+  don't carry `business_id` themselves. `materials` is a shared pricing
+  catalog, deliberately not business-owned — no `business_id` at all.
+  `users.business_id` is nullable: null means a global (not business-scoped)
+  user, per its `user_type` column. No login exists yet: every request
   resolves its business via the `resolveBusiness` middleware
   (api/src/middleware/tenant.ts), which reads an `X-Business-Id` header or
-  falls back to `DEFAULT_BUSINESS_ID` — a single business seeded by
-  migrations/0001_add_multi_tenancy.sql for V1's single-business use.
+  falls back to `DEFAULT_BUSINESS_ID` — a single business seeded by the
+  baseline migration (api/src/db/migrations/0000_brief_mephistopheles.sql)
+  for V1's single-business use.
   Creating/listing businesses themselves (not acting as one) is a separate
   admin surface — `/api/businesses`, gated by `requireAdmin`
   (api/src/middleware/admin.ts) via an `X-Admin-Key` header / `ADMIN_API_KEY`,
