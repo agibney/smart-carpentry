@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1784927307700,
-      "tag": "0000_shallow_magneto",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1786652633000,
-      "tag": "0001_add_multi_tenancy",
+      "when": 1787269547939,
+      "tag": "0000_brief_mephistopheles",
       "breakpoints": true
     }
   ]
