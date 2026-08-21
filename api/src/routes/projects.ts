@@ -109,6 +109,21 @@ router.get('/:id/bids', async (req, res) => {
   res.json(project.bids)
 })
 
+router.get('/:id/attachments', async (req, res) => {
+  // Confirm the project is ours first (same guard as GET /:id/bids) — otherwise this would
+  // leak whether a given project id exists, and its attachments, to another business.
+  const project = await db.query.projects.findFirst({
+    where: scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)),
+    with: { attachments: true },
+  })
+
+  if (!project) {
+    throw new HttpError(404, 'Project not found')
+  }
+
+  res.json(project.attachments)
+})
+
 router.delete('/:id', async (req, res) => {
   // Confirm the project is ours first (same guard as GET /:id), and pull just enough of each
   // dependent relation to check for blockers in the same query — bids.projectId,
