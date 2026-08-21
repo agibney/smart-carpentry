@@ -19,6 +19,7 @@ const { svg } = await mermaid.render('erd-svg', `erDiagram
   BUSINESSES ||--o{ USERS : employs
   BUSINESSES ||--o{ CLIENTS : owns
   BUSINESSES ||--o{ SUBCONTRACTORS : hires
+  BUSINESSES ||--o{ MATERIALS : caches
   CLIENTS ||--o{ PROJECTS : has
   PROJECTS ||--o{ BIDS : has
   BIDS ||--o{ BID_LINE_ITEMS : contains
@@ -61,6 +62,7 @@ const { svg } = await mermaid.render('erd-svg', `erDiagram
   }
   MATERIALS {
     uuid id PK
+    uuid business_id FK
     string name
     string source
     string unit

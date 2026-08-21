@@ -7,6 +7,7 @@ import businessesRouter from './routes/businesses.js'
 import clientsRouter from './routes/clients.js'
 import materialsRouter from './routes/materials.js'
 import projectsRouter from './routes/projects.js'
+import projectSubcontractorsRouter from './routes/projectSubcontractors.js'
 import subcontractorsRouter from './routes/subcontractors.js'
 import usersRouter from './routes/users.js'
 import { errorHandler } from './lib/http-error.js'
@@ -23,6 +24,9 @@ app.use('/api/businesses', businessesRouter)
 
 app.use(resolveBusiness)
 app.use('/api/projects', projectsRouter)
+// Nested under its parent project, same reasoning as /api/bids/:bidId/line-items below —
+// project_subcontractors has no business_id of its own (see routes/projectSubcontractors.ts).
+app.use('/api/projects/:projectId/subcontractors', projectSubcontractorsRouter)
 app.use('/api/clients', clientsRouter)
 app.use('/api/materials', materialsRouter)
 app.use('/api/subcontractors', subcontractorsRouter)
