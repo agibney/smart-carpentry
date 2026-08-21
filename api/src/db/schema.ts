@@ -1,13 +1,13 @@
 import { pgTable, uuid, text, timestamp, date, numeric } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
-// Tenant root. Most business-owned tables below carry a business_id FK — see
+// Tenant root. Every business-owned table below carries a business_id FK — see
 // docs/requirements.md "Decision: multi-tenant from the start". V1 only ever seeds one
-// row here (see migrations/0001_add_multi_tenancy.sql), but every query is scoped through
-// it from day one via src/lib/tenant.ts so real multi-business auth can slot in later
-// without touching query logic. Two exceptions: `materials` is a shared reference catalog,
-// not owned by any one business (see its own comment below), and `users.businessId` is
-// nullable for the same reason `userType` exists — a global user isn't scoped to a business.
+// row here (see the baseline migration, api/src/db/migrations/0000_brief_mephistopheles.sql),
+// but every query is scoped through it from day one via src/lib/tenant.ts so real
+// multi-business auth can slot in later without touching query logic. One exception:
+// `users.businessId` is nullable, for the same reason `userType` exists — a global user
+// isn't scoped to a business.
 export const businesses = pgTable('businesses', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
@@ -65,10 +65,14 @@ export const projects = pgTable('projects', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-// Shared reference catalog (pricing lookups) — deliberately not business-owned, so no
-// business_id here unlike the rest of this file. See docs/requirements.md's pricing plans.
+// Each business maintains its own materials catalog — a global shared catalog was
+// considered (see the commit that added business_id here) but doesn't actually match how
+// pricing/sourcing vary by region; per-business scoping sidesteps modeling regions
+// explicitly while still solving the "different catalogs" problem. See
+// docs/requirements.md's pricing plans.
 export const materials = pgTable('materials', {
   id: uuid('id').primaryKey().defaultRandom(),
+  businessId: uuid('business_id').references(() => businesses.id).notNull(),
   name: text('name').notNull(),
   source: text('source'),
   unit: text('unit'),
@@ -140,6 +144,7 @@ export const businessesRelations = relations(businesses, ({ many }) => ({
   users: many(users),
   clients: many(clients),
   projects: many(projects),
+  materials: many(materials),
   bids: many(bids),
   subcontractors: many(subcontractors),
   attachments: many(attachments),
@@ -162,7 +167,8 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   attachments: many(attachments),
 }))
 
-export const materialsRelations = relations(materials, ({ many }) => ({
+export const materialsRelations = relations(materials, ({ one, many }) => ({
+  business: one(businesses, { fields: [materials.businessId], references: [businesses.id] }),
   lineItems: many(bidLineItems),
 }))
 

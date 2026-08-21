@@ -8,6 +8,13 @@
       "when": 1787269547939,
       "tag": "0000_brief_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787325331535,
+      "tag": "0001_real_slyde",
+      "breakpoints": true
     }
   ]
 }
