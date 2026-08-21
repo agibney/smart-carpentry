@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import attachmentsRouter from './routes/attachments.js'
+import bidLineItemsRouter from './routes/bidLineItems.js'
 import bidsRouter from './routes/bids.js'
 import businessesRouter from './routes/businesses.js'
 import clientsRouter from './routes/clients.js'
@@ -27,6 +28,10 @@ app.use('/api/materials', materialsRouter)
 app.use('/api/subcontractors', subcontractorsRouter)
 app.use('/api/attachments', attachmentsRouter)
 app.use('/api/bids', bidsRouter)
+// Nested under its parent bid rather than a top-level /api/bid-line-items — line items have
+// no business_id of their own (see routes/bidLineItems.ts), so the URL itself carries the
+// bid context the route needs to scope through.
+app.use('/api/bids/:bidId/line-items', bidLineItemsRouter)
 // users is mounted here (tenant-scoped, like everything else on this side of resolveBusiness)
 // even though it also handles global-user creation — that branch is admin-gated inline
 // rather than by moving the whole router ahead of resolveBusiness, since business-user
