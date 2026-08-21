@@ -61,6 +61,58 @@ router.post('/', async (req, res) => {
   res.status(201).json(user)
 })
 
+router.patch('/:id', async (req, res) => {
+  const body = req.body ?? {}
+
+  // Changing userType (or reassigning businessId) is the same sensitive move POST gates
+  // behind requireAdmin — allowing it here would let a caller create a plain business user
+  // with no admin key, then PATCH it to global and bypass that gate entirely. Simplest safe
+  // answer for now: not supported via PATCH at all, business-scoped only (see GET /:id).
+  if (body.userType !== undefined || body.businessId !== undefined) {
+    throw new HttpError(400, 'userType and businessId cannot be changed via PATCH')
+  }
+
+  const updates: Partial<typeof users.$inferInsert> = {}
+
+  if ('name' in body) {
+    if (!body.name) {
+      throw new HttpError(400, 'name cannot be empty')
+    }
+    updates.name = body.name
+  }
+
+  if ('role' in body) {
+    updates.role = body.role || null
+  }
+
+  if ('email' in body) {
+    updates.email = body.email || null
+  }
+
+  if ('preferredLanguage' in body) {
+    updates.preferredLanguage = body.preferredLanguage || null
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new HttpError(400, 'No updatable fields provided')
+  }
+
+  // Scoped update-and-return in one query rather than fetch-then-update — the where clause
+  // already guards against updating another business's user (and, same as GET /:id,
+  // against a global one), so an empty result here means not found.
+  const [user] = await db
+    .update(users)
+    .set(updates)
+    .where(scopedTo(users.businessId, req.businessId, eq(users.id, req.params.id)))
+    .returning()
+
+  if (!user) {
+    throw new HttpError(404, 'User not found')
+  }
+
+  res.json(user)
+})
+
 router.get('/:id', async (req, res) => {
   // Business-scoped users only, same as GET / — fetching a global user isn't supported by
   // this route yet (no admin read surface exists for it, matching how there's no real
@@ -74,6 +126,25 @@ router.get('/:id', async (req, res) => {
   }
 
   res.json(user)
+})
+
+router.delete('/:id', async (req, res) => {
+  // Business-scoped only, same boundary as GET/PATCH /:id — deleting a global user isn't
+  // supported by this route yet, same reasoning as those.
+  const user = await db.query.users.findFirst({
+    where: scopedTo(users.businessId, req.businessId, eq(users.id, req.params.id)),
+    columns: { id: true },
+  })
+
+  if (!user) {
+    throw new HttpError(404, 'User not found')
+  }
+
+  // Nothing references users.id yet — safe to delete outright, same as
+  // DELETE /api/attachments/:id.
+  await db.delete(users).where(eq(users.id, req.params.id))
+
+  res.status(204).send()
 })
 
 export default router
