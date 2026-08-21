@@ -51,8 +51,43 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const body = req.body ?? {}
 
-  if (!body.status || !PROJECT_STATUSES.includes(body.status)) {
-    throw new HttpError(400, `status must be one of: ${PROJECT_STATUSES.join(', ')}`)
+  // clientId isn't editable here — reassigning a project to a different client is a bigger,
+  // more deliberate move than a field edit, same reasoning as bids.ts not letting PATCH
+  // touch projectId or projectSubcontractors.ts not letting it touch subcontractorId.
+  if (body.clientId !== undefined) {
+    throw new HttpError(400, 'clientId cannot be changed via PATCH')
+  }
+
+  const updates: Partial<typeof projects.$inferInsert> = {}
+
+  if ('status' in body) {
+    if (!body.status || !PROJECT_STATUSES.includes(body.status)) {
+      throw new HttpError(400, `status must be one of: ${PROJECT_STATUSES.join(', ')}`)
+    }
+    updates.status = body.status
+  }
+
+  if ('title' in body) {
+    if (!body.title) {
+      throw new HttpError(400, 'title cannot be empty')
+    }
+    updates.title = body.title
+  }
+
+  if ('description' in body) {
+    updates.description = body.description || null
+  }
+
+  if ('startDate' in body) {
+    updates.startDate = body.startDate || null
+  }
+
+  if ('endDate' in body) {
+    updates.endDate = body.endDate || null
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new HttpError(400, 'No updatable fields provided')
   }
 
   // Scoped update-and-return in one query rather than fetch-then-update — the where clause
@@ -60,7 +95,7 @@ router.patch('/:id', async (req, res) => {
   // means not found (same 404 semantics as GET /:id).
   const [project] = await db
     .update(projects)
-    .set({ status: body.status })
+    .set(updates)
     .where(scopedTo(projects.businessId, req.businessId, eq(projects.id, req.params.id)))
     .returning()
 
