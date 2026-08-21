@@ -9,8 +9,9 @@ import { HttpError } from '../lib/http-error.js'
  *
  * There's no login system yet (see docs/requirements.md — auth is a later pass), so for
  * now the business is either named explicitly via an X-Business-Id header, or falls back
- * to DEFAULT_BUSINESS_ID (the single business seeded by migrations/0001_add_multi_tenancy.sql,
- * matching V1's single-business usage). The id is validated against the businesses table
+ * to DEFAULT_BUSINESS_ID (the single business seeded by the baseline migration,
+ * api/src/db/migrations/0000_brief_mephistopheles.sql, matching V1's single-business usage).
+ * The id is validated against the businesses table
  * on every request — cheap at this scale, and it turns a typo'd/stale id into a clear 400
  * instead of routes silently scoping to nothing and looking like empty data.
  *

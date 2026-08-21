@@ -4,8 +4,10 @@ import attachmentsRouter from './routes/attachments.js'
 import bidsRouter from './routes/bids.js'
 import businessesRouter from './routes/businesses.js'
 import clientsRouter from './routes/clients.js'
+import materialsRouter from './routes/materials.js'
 import projectsRouter from './routes/projects.js'
 import subcontractorsRouter from './routes/subcontractors.js'
+import usersRouter from './routes/users.js'
 import { errorHandler } from './lib/http-error.js'
 import { resolveBusiness } from './middleware/tenant.js'
 
@@ -21,9 +23,15 @@ app.use('/api/businesses', businessesRouter)
 app.use(resolveBusiness)
 app.use('/api/projects', projectsRouter)
 app.use('/api/clients', clientsRouter)
+app.use('/api/materials', materialsRouter)
 app.use('/api/subcontractors', subcontractorsRouter)
 app.use('/api/attachments', attachmentsRouter)
 app.use('/api/bids', bidsRouter)
+// users is mounted here (tenant-scoped, like everything else on this side of resolveBusiness)
+// even though it also handles global-user creation — that branch is admin-gated inline
+// rather than by moving the whole router ahead of resolveBusiness, since business-user
+// creation still needs the tenant context (see routes/users.ts).
+app.use('/api/users', usersRouter)
 
 // Must be last: Express 5 forwards rejected promises from async route handlers here automatically.
 app.use(errorHandler)
