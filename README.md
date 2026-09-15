@@ -1,75 +1,46 @@
-# Nuxt Minimal Starter
+# Smart Carpentry
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+A personal project: project tracking and fast bidding for a solo carpentry
+business. It's client-facing tooling for a real solo carpenter, built as a
+React portfolio piece (I already have Vue experience — this fills the React
+gap) and as a way to learn agentic AI development patterns.
 
-## Setup
+**Early stage.** Core CRUD (projects, bids) is being built out; auth,
+scheduling, and the rest of the roadmap below are not implemented yet.
 
-Make sure to install dependencies:
+## Stack
 
-```bash
-# npm
-npm install
+- **`web/`** — React 19 + React Router 7 (framework mode) + PrimeReact. The
+  actively-developed frontend. Business logic lives in route
+  loaders/actions and `web/app/lib`, not components.
+- **`api/`** — Express + Drizzle ORM + Postgres (via `docker-compose`). A
+  standalone service any frontend can call.
+- **`app/`** — Nuxt 3 / Vue 3. A frozen reference implementation, kept only
+  for side-by-side comparison — not receiving new features.
 
-# pnpm
-pnpm install
+## Docs
 
-# yarn
-yarn install
+- [`docs/requirements.md`](docs/requirements.md) — full product
+  requirements: scope tiers, multi-tenant design, and the scheduling /
+  weather / pricing / voice / AI-design roadmap.
+- [`docs/carpentry_app_erd.html`](docs/carpentry_app_erd.html) — entity
+  relationship diagram for the schema in `api/src/db/schema.ts`.
 
-# bun
-bun install
-```
+## Working with Claude Code
 
-## Development Server
+I use Claude Code as a working pair on this project: I write specs (either
+in chat or as docs like `docs/requirements.md`), Claude proposes an
+implementation plan and the code, and I review and correct before anything
+gets committed — nothing lands without me reading and understanding it
+first. `CLAUDE.md` in this repo captures the conventions I've settled on
+for that back-and-forth to stay quick.
 
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
+## Getting started
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+docker-compose up -d          # Postgres (+ any other local services)
+cd api && npm install && npm run dev
+cd web && npm install && npm run dev
 ```
 
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+See each package's `.env.example` for required environment variables.
