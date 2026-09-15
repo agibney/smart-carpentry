@@ -68,6 +68,17 @@
             "claim.name": "realm_access.roles",
             "jsonType.label": "String"
           }
+        },
+        {
+          "name": "web-app audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "web-app",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
         }
       ]
     }

@@ -41,7 +41,12 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   let payload: Awaited<ReturnType<typeof jwtVerify>>['payload']
   try {
     ;({ payload } = await jwtVerify(token, jwks, { issuer: ISSUER, audience: KEYCLOAK_CLIENT_ID }))
-  } catch {
+  } catch (err) {
+    // The 401 sent to the client is deliberately generic (don't hand back specifics of why a
+    // token failed), but that swallowed the real reason (e.g. an audience mismatch) into an
+    // unhelpful "invalid or expired" during earlier manual testing — log it server-side so a
+    // wrong issuer/audience/expiry/signature failure is distinguishable from the log alone.
+    console.error('Token verification failed:', err)
     throw new HttpError(401, 'Invalid or expired token')
   }
 
