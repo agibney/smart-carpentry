@@ -21,7 +21,15 @@ function getOidcConfig(): Promise<client.Configuration> {
     const issuer = new URL(`${KEYCLOAK_BASE_URL}/realms/${KEYCLOAK_REALM}`)
     // web-app is a public client (no secret) — client.None() is required to tell openid-client
     // not to attempt client_secret_basic auth, which is the library's default assumption.
-    configPromise = client.discovery(issuer, KEYCLOAK_CLIENT_ID, undefined, client.None())
+    //
+    // openid-client v6 refuses non-HTTPS discovery/token requests by default (throws "only
+    // requests to HTTPS are allowed") — there's no automatic localhost exception, unlike some
+    // other OIDC libraries. Local dev runs Keycloak over plain HTTP (docker-compose.yml's
+    // KC_HTTP_ENABLED, no TLS termination), so allowInsecureRequests is opted into whenever
+    // KEYCLOAK_BASE_URL is http: — this never weakens a real https: deployment, since the
+    // issuer URL's own scheme is what actually determines whether TLS is used on the wire.
+    const execute = issuer.protocol === 'http:' ? [client.allowInsecureRequests] : []
+    configPromise = client.discovery(issuer, KEYCLOAK_CLIENT_ID, undefined, client.None(), { execute })
   }
   return configPromise
 }
