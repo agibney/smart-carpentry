@@ -11,5 +11,32 @@ services:
     volumes:
       - carpentry_pg_data:/var/lib/postgresql/data
 
+  # Local dev IdP. A single realm ("carpentry", see keycloak/import/carpentry-realm.json) is
+  # imported at startup, seeded with the global-admin dev user and a group for
+  # DEFAULT_BUSINESS_ID's business (matching the baseline migration). Groups for businesses
+  # created later (via POST /api/businesses) are provisioned at runtime through the Admin
+  # REST API and only live in carpentry_keycloak_data — see that volume's comment below
+  # before running `docker-compose down -v`.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: localdevpassword
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - carpentry_keycloak_data:/opt/keycloak/data
+      - ./keycloak/import:/opt/keycloak/data/import:ro
+
 volumes:
   carpentry_pg_data:
+  # WARNING: this is the only record of groups/users created at runtime for businesses added
+  # after startup (see POST /api/businesses / src/lib/keycloak-admin.ts) — their Postgres
+  # rows survive a `docker-compose down -v`, but their Keycloak group/owner user does not,
+  # leaving them unable to log in. Use `docker-compose down` (no -v) for routine local dev.
+  carpentry_keycloak_data:

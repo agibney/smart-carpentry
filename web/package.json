@@ -12,6 +12,7 @@
     "@react-router/node": "^7.18.2",
     "@react-router/serve": "^7.18.2",
     "isbot": "^5.2.1",
+    "openid-client": "^6.8.7",
     "primeicons": "^8.0.0",
     "primereact": "^10.9.8",
     "react": "^19.2.8",

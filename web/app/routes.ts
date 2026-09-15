@@ -5,4 +5,8 @@ export default [
   route('projects', 'routes/projects.tsx'),
   route('projects/create', 'routes/projects.create.tsx'),
   route('projects/:id', 'routes/projects.$id.tsx'),
+  route('auth/login', 'routes/auth.login.tsx'),
+  route('auth/callback', 'routes/auth.callback.tsx'),
+  route('auth/logout', 'routes/auth.logout.tsx'),
+  route('admin/businesses', 'routes/admin.businesses.tsx'),
 ] satisfies RouteConfig

@@ -3,7 +3,7 @@ import { Router } from 'express'
 import { db } from '../db/index.js'
 import { USER_TYPES, users } from '../db/schema.js'
 import { HttpError } from '../lib/http-error.js'
-import { requireAdmin } from '../middleware/admin.js'
+import { requireGlobalAdmin } from '../middleware/globalAdmin.js'
 import { scopedTo } from '../lib/tenant.js'
 
 const router = Router()
@@ -33,16 +33,19 @@ router.post('/', async (req, res) => {
   if (userType === 'global') {
     // A global user isn't scoped to any business — creating one needs the same admin
     // boundary as creating a business itself (see businesses.ts), not just "act as this
-    // tenant" (X-Business-Id). Reused directly rather than mounting requireAdmin for the
-    // whole router, since only this one branch needs it — a synchronous throw here
-    // rejects this async handler's promise, which Express 5 forwards to errorHandler same
-    // as any other thrown HttpError (see app.ts).
+    // tenant" (req.businessId). Reused directly rather than mounting requireGlobalAdmin for
+    // the whole router, since only this one branch needs it.
     //
-    // Known quirk: this route still sits behind resolveBusiness (app.ts), so even a
-    // global-user request must resolve *some* valid business context to get this far —
-    // harmless for V1 since DEFAULT_BUSINESS_ID always provides one, but worth knowing if
-    // this route ever moves ahead of resolveBusiness like businesses.ts did.
-    requireAdmin(req, res, () => {})
+    // Known quirk (same class as the one this branch already used to have): /api/users sits
+    // behind requireBusinessContext (app.ts), so a global-admin caller — who by definition
+    // has req.businessId === null — 403s before ever reaching this handler. In practice this
+    // branch is unreachable/dead for now; new global-admin `users` rows are created instead
+    // by JIT provisioning the first time that account authenticates (see
+    // src/middleware/auth.ts / src/lib/keycloak-user-sync.ts), which doesn't need this route
+    // at all. Left in place rather than deleted since a future admin-facing "invite a global
+    // user" flow would want this exact validation, just mounted ahead of
+    // requireBusinessContext like businesses.ts is.
+    requireGlobalAdmin(req, res, () => {})
     businessId = null
   }
 

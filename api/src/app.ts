@@ -11,18 +11,22 @@ import projectSubcontractorsRouter from './routes/projectSubcontractors.js'
 import subcontractorsRouter from './routes/subcontractors.js'
 import usersRouter from './routes/users.js'
 import { errorHandler } from './lib/http-error.js'
-import { resolveBusiness } from './middleware/tenant.js'
+import { authenticate, requireBusinessContext } from './middleware/auth.js'
 
 export const app = express()
 
 app.use(cors({ origin: process.env.WEB_ORIGIN ?? 'http://localhost:5173' }))
 app.use(express.json())
 
+// Every route needs some verified identity, so authenticate runs before anything else —
+// unlike the old resolveBusiness, which /api/businesses was mounted ahead of on purpose.
+app.use(authenticate)
+
 // Tenant management (create/list businesses) is admin-gated, not tenant-scoped — mounted
-// ahead of resolveBusiness since it isn't acting "as" a business, it's managing them.
+// ahead of requireBusinessContext since it isn't acting "as" a business, it's managing them.
 app.use('/api/businesses', businessesRouter)
 
-app.use(resolveBusiness)
+app.use(requireBusinessContext)
 app.use('/api/projects', projectsRouter)
 // Nested under its parent project, same reasoning as /api/bids/:bidId/line-items below —
 // project_subcontractors has no business_id of its own (see routes/projectSubcontractors.ts).

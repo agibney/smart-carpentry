@@ -41,3 +41,16 @@ export interface CreateProjectInput {
   startDate?: string | null
   description?: string | null
 }
+
+export interface Business {
+  id: string
+  name: string
+  keycloakProvisionedAt: string | null
+  createdAt: string
+}
+
+export interface CreateBusinessInput {
+  name: string
+  ownerName: string
+  ownerEmail: string
+}
