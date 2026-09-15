@@ -95,11 +95,13 @@ export async function handleLoginCallback(request: Request): Promise<Response> {
   session.set('businessId', businessId)
   session.set('refreshToken', tokens.refresh_token)
 
-  // returnTo is '/' when the login was started generically (e.g. a plain "Log in" link)
-  // rather than by a guard redirecting from a specific protected page — in that case, land
-  // the user somewhere role-appropriate instead of bouncing through home.tsx's own redirect,
-  // which always targets /projects and would immediately reject a global-admin session.
-  const target = returnTo !== '/' ? returnTo : roles.includes('global-admin') ? '/admin/businesses' : '/projects'
+  // A global-admin session always lands on /admin/businesses, ignoring returnTo — a
+  // global-admin has no business group, so any returnTo pointing at a business-scoped page
+  // (e.g. requireBusinessSession redirected here from /projects) would just 403 immediately
+  // via requireBusinessSession's own check. Once global-admins can see business-scoped
+  // pages too (a "super-admin, access everything" mode — noted as future work, not yet
+  // built), this can go back to respecting returnTo unconditionally.
+  const target = roles.includes('global-admin') ? '/admin/businesses' : returnTo !== '/' ? returnTo : '/projects'
 
   return redirect(target, {
     headers: [
