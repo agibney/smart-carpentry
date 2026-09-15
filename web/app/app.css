@@ -53,6 +53,15 @@ body {
   gap: 0.375rem;
 }
 
+/* PrimeReact 10.9.8 (the version actually installed here) has no `fluid` prop on these
+   components — it was written against newer docs/examples that don't match what's in
+   package.json. This is the CSS equivalent: every direct-child form control spans the
+   field's full width. */
+.field > .p-component,
+.field > input {
+  width: 100%;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;

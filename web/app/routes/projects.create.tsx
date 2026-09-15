@@ -81,13 +81,12 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             optionLabel="name"
             optionValue="id"
             placeholder="Select a client"
-            fluid
           />
         </div>
 
         <div className="field">
           <label htmlFor="title">Title</label>
-          <InputText id="title" value={title} onChange={(e) => setTitle(e.target.value)} fluid />
+          <InputText id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
         <div className="field">
@@ -97,7 +96,6 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             value={status}
             onChange={(e) => setStatus(e.value)}
             options={[...PROJECT_STATUSES]}
-            fluid
           />
         </div>
 
@@ -108,7 +106,6 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             value={startDate}
             onChange={(e) => setStartDate((e.value as Date) ?? null)}
             dateFormat="yy-mm-dd"
-            fluid
           />
         </div>
 
@@ -119,7 +116,6 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            fluid
           />
         </div>
 
