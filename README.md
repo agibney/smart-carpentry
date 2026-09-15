@@ -1,11 +1,12 @@
 # Smart Carpentry
 
 A personal project: project tracking and fast bidding for a solo carpentry
-business. It's client-facing tooling for a real solo carpenter, built as a
-React portfolio piece (I already have Vue experience — this fills the React
-gap) and as a way to learn agentic AI development patterns.
+business. It's client-facing tooling for a real solo carpenter, built to
+develop production React experience alongside my existing Vue background,
+and as a way to learn agentic AI development patterns.
 
-**Early stage.** Core CRUD (projects, bids) is being built out; auth,
+**Early stage, personal project — unlicensed and not open for
+contributions.** Core CRUD (projects, bids) is being built out; auth,
 scheduling, and the rest of the roadmap below are not implemented yet.
 
 ## Stack
