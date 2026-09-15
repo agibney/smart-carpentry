@@ -3,6 +3,7 @@
 // assume client-side redirects and React context, the wrong shape for an SSR-only app
 // (react-router.config.ts sets ssr: true) where every loader/action runs server-side and the
 // browser never holds a token at all.
+import { decodeJwt } from 'jose'
 import * as client from 'openid-client'
 import { redirect } from 'react-router'
 import { authFlowStorage, sessionStorage, type SessionData } from './session.server'
@@ -85,7 +86,14 @@ export async function handleLoginCallback(request: Request): Promise<Response> {
     throw new Error('Keycloak token response is missing expected claims/refresh_token')
   }
 
-  const roles = extractRoles(claims)
+  // Keycloak's built-in "realm roles" mapper defaults to including realm_access.roles on the
+  // *access* token only, not the ID token — unlike the custom `groups` mapper on this client
+  // (carpentry-realm.json), which was explicitly configured with id.token.claim: true. Rather
+  // than editing Keycloak's default mapper config, read roles off the access token instead —
+  // same token/claim shape api/'s own auth middleware already trusts for this. Not signature-
+  // verified here since it came directly from Keycloak's token endpoint over this same
+  // authenticated exchange, not from an untrusted caller.
+  const roles = extractRoles(decodeJwt(tokens.access_token))
   const businessId = extractBusinessId(claims)
 
   const session = await sessionStorage.getSession()
