@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Blocks a commit if gitleaks finds a likely secret in the staged changes. Added after a
+# manual gitleaks scan of the repo/history (clean) ahead of making it public — this hook is
+# what keeps it clean going forward.
+#
+# One-time setup per clone (hooks aren't installed automatically by git):
+#   git config core.hooksPath .githooks
+#
+# Requires gitleaks (https://github.com/gitleaks/gitleaks) on PATH:
+#   curl -sL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz \
+#     | tar -xz -C ~/.local/bin gitleaks   # adjust archive name for your OS/arch
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed or not on PATH — see .githooks/pre-commit for install instructions." >&2
+  echo "Refusing to commit without a secrets scan. Install gitleaks, or use 'git commit --no-verify' to bypass this once (not recommended)." >&2
+  exit 1
+fi
+
+gitleaks protect --staged --redact --no-banner
