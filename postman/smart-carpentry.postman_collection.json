@@ -1,0 +1,260 @@
+{
+  "info": {
+    "name": "smart-carpentry",
+    "description": "Local dev API testing for smart-carpentry's api/ (Express) behind Keycloak auth. Requires 'Direct access grants' temporarily enabled on the carpentry realm's web-app client (Keycloak admin console → Clients → web-app → Settings → Capability config) — that's off by default since real login uses Authorization Code + PKCE only; flip it back off when done testing. Run the requests in the 'Auth' folder first — each one saves its access_token into a collection variable the other folders' requests reference via {{access_token_...}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "keycloak_base_url", "value": "http://localhost:8080" },
+    { "key": "keycloak_realm", "value": "carpentry" },
+    { "key": "keycloak_client_id", "value": "web-app" },
+    { "key": "api_base_url", "value": "http://localhost:3001" },
+    { "key": "access_token_admin", "value": "" },
+    { "key": "access_token_owner", "value": "" },
+    { "key": "access_token_business_b", "value": "" },
+    { "key": "test_client_id", "value": "" },
+    { "key": "test_project_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Get Token - admin (global-admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password", "type": "text" },
+                { "key": "client_id", "value": "{{keycloak_client_id}}", "type": "text" },
+                { "key": "username", "value": "admin", "type": "text" },
+                { "key": "password", "value": "localdevpassword", "type": "text" }
+              ]
+            },
+            "url": "{{keycloak_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('access_token_admin', data.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Token - owner (seeded Acme Carpentry business)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password", "type": "text" },
+                { "key": "client_id", "value": "{{keycloak_client_id}}", "type": "text" },
+                { "key": "username", "value": "owner", "type": "text" },
+                { "key": "password", "value": "localdevpassword", "type": "text" }
+              ]
+            },
+            "url": "{{keycloak_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('access_token_owner', data.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Token - business_b (edit username/password below to match a business you created)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password", "type": "text" },
+                { "key": "client_id", "value": "{{keycloak_client_id}}", "type": "text" },
+                { "key": "username", "value": "CHANGE-ME@example.com", "type": "text" },
+                { "key": "password", "value": "CHANGE-ME", "type": "text" }
+              ]
+            },
+            "url": "{{keycloak_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('access_token_business_b', data.access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Businesses (global-admin only)",
+      "item": [
+        {
+          "name": "List businesses",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_admin}}" }],
+            "url": "{{api_base_url}}/api/businesses"
+          }
+        },
+        {
+          "name": "Create business",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test Co\",\n  \"ownerName\": \"Test Owner\",\n  \"ownerEmail\": \"postman-test-owner@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{api_base_url}}/api/businesses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "List clients (as owner)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_owner}}" }],
+            "url": "{{api_base_url}}/api/clients"
+          }
+        },
+        {
+          "name": "Create test client (as owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token_owner}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Client A\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{api_base_url}}/api/clients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('test_client_id', data.id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List projects (as owner)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_owner}}" }],
+            "url": "{{api_base_url}}/api/projects"
+          }
+        },
+        {
+          "name": "Create test project (as owner, needs test_client_id set)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token_owner}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"{{test_client_id}}\",\n  \"title\": \"Test Project A\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{api_base_url}}/api/projects"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('test_project_id', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get test project by id (as owner)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_owner}}" }],
+            "url": "{{api_base_url}}/api/projects/{{test_project_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Isolation Check (run Auth + Clients + Projects above first)",
+      "item": [
+        {
+          "name": "List clients as business_b (expect: Test Client A absent)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_business_b}}" }],
+            "url": "{{api_base_url}}/api/clients"
+          }
+        },
+        {
+          "name": "List projects as business_b (expect: Test Project A absent)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_business_b}}" }],
+            "url": "{{api_base_url}}/api/projects"
+          }
+        },
+        {
+          "name": "Get owner's test project by id as business_b (expect: 404)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token_business_b}}" }],
+            "url": "{{api_base_url}}/api/projects/{{test_project_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}
