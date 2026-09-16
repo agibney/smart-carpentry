@@ -5,27 +5,30 @@ import { InputText } from 'primereact/inputtext'
 import { InputTextarea } from 'primereact/inputtextarea'
 import { Message } from 'primereact/message'
 import { type FormEvent, useState } from 'react'
-import { Link, redirect, useNavigation, useSubmit } from 'react-router'
+import { data, Link, redirect, useNavigation, useSubmit } from 'react-router'
+import { requireBusinessSession } from '../lib/auth.server'
 import { createProject, getClients } from '../lib/api'
 import { PROJECT_STATUSES, type ProjectStatus } from '../lib/types'
 import type { Route } from './+types/projects.create'
 
-export async function loader() {
-  return { clients: await getClients() }
+export async function loader({ request }: Route.LoaderArgs) {
+  const { accessToken, headers } = await requireBusinessSession(request)
+  return data({ clients: await getClients(accessToken) }, { headers })
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const { accessToken, headers } = await requireBusinessSession(request)
   const body = await request.json()
 
   if (!body.clientId || !body.title) {
-    return { error: 'Client and title are required.' }
+    return data({ error: 'Client and title are required.' }, { headers })
   }
 
   try {
-    const project = await createProject(body)
-    return redirect(`/projects/${project.id}`)
+    const project = await createProject(accessToken, body)
+    return redirect(`/projects/${project.id}`, { headers })
   } catch {
-    return { error: 'Failed to create project.' }
+    return data({ error: 'Failed to create project.' }, { headers })
   }
 }
 
@@ -78,13 +81,12 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             optionLabel="name"
             optionValue="id"
             placeholder="Select a client"
-            fluid
           />
         </div>
 
         <div className="field">
           <label htmlFor="title">Title</label>
-          <InputText id="title" value={title} onChange={(e) => setTitle(e.target.value)} fluid />
+          <InputText id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
         <div className="field">
@@ -94,7 +96,6 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             value={status}
             onChange={(e) => setStatus(e.value)}
             options={[...PROJECT_STATUSES]}
-            fluid
           />
         </div>
 
@@ -105,7 +106,6 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             value={startDate}
             onChange={(e) => setStartDate((e.value as Date) ?? null)}
             dateFormat="yy-mm-dd"
-            fluid
           />
         </div>
 
@@ -116,7 +116,6 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            fluid
           />
         </div>
 

@@ -1,0 +1,113 @@
+{
+  "realm": "carpentry",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "global-admin",
+        "description": "Cross-tenant admin/support access, not scoped to a business group — see docs/requirements.md USERS.user_type='global'"
+      },
+      { "name": "owner", "description": "Owns their business — full access within its tenant" },
+      { "name": "employee", "description": "Works for their business — scoped access within its tenant" }
+    ]
+  },
+  "groups": [
+    {
+      "name": "businesses",
+      "subGroups": [
+        {
+          "name": "00000000-0000-0000-0000-000000000001"
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "web-app",
+      "name": "smart-carpentry web app",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:5173/auth/callback"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "web-app audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "web-app",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Global",
+      "lastName": "Admin",
+      "email": "admin@example.com",
+      "credentials": [
+        { "type": "password", "value": "localdevpassword", "temporary": false }
+      ],
+      "realmRoles": ["global-admin"]
+    },
+    {
+      "username": "owner",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Owner",
+      "email": "owner@example.com",
+      "credentials": [
+        { "type": "password", "value": "localdevpassword", "temporary": false }
+      ],
+      "realmRoles": ["owner"],
+      "groups": ["/businesses/00000000-0000-0000-0000-000000000001"]
+    }
+  ]
+}

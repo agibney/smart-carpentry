@@ -11,6 +11,12 @@ import { relations } from 'drizzle-orm'
 export const businesses = pgTable('businesses', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  // Set once POST /api/businesses finishes provisioning this business's Keycloak group +
+  // owner user (see api/src/lib/keycloak-admin.ts — all businesses share one realm,
+  // distinguished by a /businesses/<id> group, not a realm each). Informational only — the
+  // auth middleware never reads it; it exists so the admin UI can tell "business row exists"
+  // apart from "business can log in" and offer a retry if provisioning failed partway through.
+  keycloakProvisionedAt: timestamp('keycloak_provisioned_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -31,6 +37,12 @@ export const users = pgTable('users', {
   name: text('name').notNull(),
   email: text('email'),
   preferredLanguage: text('preferred_language'),
+  // The Keycloak "sub" claim for this user's account — either the seeded/admin-created
+  // owner user (see api/src/lib/keycloak-admin.ts) or a row JIT-provisioned by
+  // src/middleware/auth.ts the first time a token from an unrecognized subject is verified.
+  // Unique and nullable rather than required so existing seed data (inserted before a
+  // Keycloak account existed) doesn't need a backfill to stay valid.
+  keycloakUserId: text('keycloak_user_id').unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

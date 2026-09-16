@@ -2,14 +2,16 @@ import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Tag } from 'primereact/tag'
-import { Link } from 'react-router'
+import { data, Link } from 'react-router'
+import { requireBusinessSession } from '../lib/auth.server'
 import { getProjects } from '../lib/api'
 import { projectStatusSeverity } from '../lib/project-status'
 import type { Project } from '../lib/types'
 import type { Route } from './+types/projects'
 
-export async function loader() {
-  return { projects: await getProjects() }
+export async function loader({ request }: Route.LoaderArgs) {
+  const { accessToken, headers } = await requireBusinessSession(request)
+  return data({ projects: await getProjects(accessToken) }, { headers })
 }
 
 function formatDate(value: string | null) {

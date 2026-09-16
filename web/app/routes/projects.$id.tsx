@@ -1,13 +1,15 @@
 import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
 import { Tag } from 'primereact/tag'
-import { Link } from 'react-router'
+import { data, Link } from 'react-router'
+import { requireBusinessSession } from '../lib/auth.server'
 import { getProject } from '../lib/api'
 import { projectStatusSeverity } from '../lib/project-status'
 import type { Route } from './+types/projects.$id'
 
-export async function loader({ params }: Route.LoaderArgs) {
-  return { project: await getProject(params.id) }
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { accessToken, headers } = await requireBusinessSession(request)
+  return data({ project: await getProject(accessToken, params.id) }, { headers })
 }
 
 function formatDate(value: string | null) {
