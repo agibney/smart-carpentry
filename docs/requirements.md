@@ -307,3 +307,20 @@ the design.
 
 Search limitation: encrypted PII fields paired with a hash column
 (phone, email) only support exact-match lookup, not partial/fuzzy search.
+
+## Open TODOs / Future Considerations
+Captured to revisit later, not yet scoped into a tier:
+- **Navigation/menu system** — a left sidebar is the likely shape, but which
+  entities belong at the top level needs its own discussion per user type;
+  a business user's and a global admin's top-level nav probably shouldn't
+  be the same list.
+- **Global admin as a true super-user** — not just managing the businesses
+  list (`/api/businesses`), but able to view/modify data across *all*
+  entity types for *any* business, not only its own. This is a superset of
+  the "act as business X" impersonation gap already flagged as a known V1
+  limitation in the Keycloak auth work — that was scoped narrowly to
+  business-scoped routes; this is the broader "global admin sees/edits
+  everything" version of the same idea.
+- **Consider a PrimeReact UI template/starter** (e.g. Sakai,
+  https://sakai.primereact.org/) as a foundation for the above, rather than
+  building the navigation shell and layout conventions from scratch.
