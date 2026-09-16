@@ -113,47 +113,67 @@ export async function provisionBusiness(
 ): Promise<{ keycloakUserId: string; temporaryPassword: string }> {
   const token = await getProvisionerToken()
 
+  // This is 4 sequential Keycloak API calls with no built-in transaction — a failure partway
+  // through (e.g. the user gets created but role-assignment fails on a network blip) used to
+  // leave an orphaned group/user with zero cleanup, since routes/businesses.ts only ever
+  // compensated for a failure in *its own* Postgres write, never one in here. Track what this
+  // call itself created (not what it found pre-existing) and roll that back on any failure
+  // below, before letting the error propagate.
   const parentGroupId = await ensureBusinessesParentGroup(token)
 
   let groupId = await findGroupIdByName(token, businessId, parentGroupId)
+  let createdGroup = false
   if (!groupId) {
     const res = await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/groups/${parentGroupId}/children`, token, {
       method: 'POST',
       body: JSON.stringify({ name: businessId }),
     })
     groupId = idFromLocation(res)
+    createdGroup = true
   }
 
-  const temporaryPassword = generateTemporaryPassword()
-  const [firstName, ...rest] = owner.name.split(' ')
-  const lastName = rest.join(' ') || firstName
+  try {
+    const temporaryPassword = generateTemporaryPassword()
+    const [firstName, ...rest] = owner.name.split(' ')
+    const lastName = rest.join(' ') || firstName
 
-  const userRes = await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users`, token, {
-    method: 'POST',
-    body: JSON.stringify({
-      username: owner.email,
-      email: owner.email,
-      firstName,
-      lastName,
-      enabled: true,
-      emailVerified: true,
-      credentials: [{ type: 'password', value: temporaryPassword, temporary: true }],
-      requiredActions: ['UPDATE_PASSWORD'],
-    }),
-  })
-  const keycloakUserId = idFromLocation(userRes)
+    const userRes = await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users`, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        username: owner.email,
+        email: owner.email,
+        firstName,
+        lastName,
+        enabled: true,
+        emailVerified: true,
+        credentials: [{ type: 'password', value: temporaryPassword, temporary: true }],
+        requiredActions: ['UPDATE_PASSWORD'],
+      }),
+    })
+    const keycloakUserId = idFromLocation(userRes)
 
-  await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users/${keycloakUserId}/groups/${groupId}`, token, {
-    method: 'PUT',
-  })
+    try {
+      await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users/${keycloakUserId}/groups/${groupId}`, token, {
+        method: 'PUT',
+      })
 
-  const ownerRole = await findRoleByName(token, 'owner')
-  await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users/${keycloakUserId}/role-mappings/realm`, token, {
-    method: 'POST',
-    body: JSON.stringify([ownerRole]),
-  })
+      const ownerRole = await findRoleByName(token, 'owner')
+      await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users/${keycloakUserId}/role-mappings/realm`, token, {
+        method: 'POST',
+        body: JSON.stringify([ownerRole]),
+      })
+    } catch (err) {
+      await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/users/${keycloakUserId}`, token, { method: 'DELETE' }).catch(() => {})
+      throw err
+    }
 
-  return { keycloakUserId, temporaryPassword }
+    return { keycloakUserId, temporaryPassword }
+  } catch (err) {
+    if (createdGroup) {
+      await kcFetch(`/admin/realms/${KEYCLOAK_REALM}/groups/${groupId}`, token, { method: 'DELETE' }).catch(() => {})
+    }
+    throw err
+  }
 }
 
 /** Compensating action for a failed Postgres write after Keycloak provisioning succeeded —

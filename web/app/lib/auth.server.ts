@@ -76,10 +76,18 @@ export async function handleLoginCallback(request: Request): Promise<Response> {
   }
 
   const config = await getOidcConfig()
-  const tokens = await client.authorizationCodeGrant(config, new URL(request.url), {
-    pkceCodeVerifier: codeVerifier,
-    expectedState: state,
-  })
+  let tokens: Awaited<ReturnType<typeof client.authorizationCodeGrant>>
+  try {
+    tokens = await client.authorizationCodeGrant(config, new URL(request.url), {
+      pkceCodeVerifier: codeVerifier,
+      expectedState: state,
+    })
+  } catch {
+    // An expired or already-consumed code (e.g. the callback URL got reloaded, or the flow
+    // took too long) — same recovery as any other invalid auth attempt: back to login, not an
+    // unhandled exception surfaced to RR7's generic error boundary.
+    throw redirect('/auth/login')
+  }
 
   const claims = tokens.claims()
   if (!claims?.sub || !tokens.refresh_token) {
@@ -152,11 +160,31 @@ function extractBusinessId(claims: Record<string, unknown>): string | null {
 
 type ValidSession = { data: SessionData; accessToken: string; setCookieHeader?: string }
 
-/** Loads the session, refreshing the access token via the stored refresh token on every call
- * (see session.server.ts's comment on why the refresh token, not the access token, is what's
+// React Router runs every matched route's loader for a navigation concurrently — root.tsx's
+// loader (getOptionalSession) and a leaf route's loader (requireBusinessSession/
+// requireGlobalSession) both call loadValidSession for the *same* incoming request. Since
+// Keycloak rotates refresh tokens on use (see the comment below), two concurrent calls
+// submitting the same refresh token race: the loser gets invalid_grant and reads as "not
+// logged in," bouncing a genuinely-authenticated user back to login. RR7 passes the same
+// Request object instance to every loader in one navigation, so a WeakMap keyed on it dedups
+// this correctly — one shared refresh per request, and the entry is naturally freed once the
+// request is done (no manual cache invalidation needed).
+const sessionCache = new WeakMap<Request, Promise<ValidSession | null>>()
+
+/** Loads the session, refreshing the access token via the stored refresh token (see
+ * session.server.ts's comment on why the refresh token, not the access token, is what's
  * stored). Returns null if there's no session or the refresh token itself has expired/been
- * revoked — callers redirect to login in that case. */
-async function loadValidSession(request: Request): Promise<ValidSession | null> {
+ * revoked — callers redirect to login in that case. Memoized per-request; see sessionCache. */
+function loadValidSession(request: Request): Promise<ValidSession | null> {
+  const cached = sessionCache.get(request)
+  if (cached) return cached
+
+  const promise = loadValidSessionUncached(request)
+  sessionCache.set(request, promise)
+  return promise
+}
+
+async function loadValidSessionUncached(request: Request): Promise<ValidSession | null> {
   const session = await sessionStorage.getSession(request.headers.get('Cookie'))
   const refreshToken = session.get('refreshToken')
   if (!refreshToken) return null
