@@ -7,7 +7,8 @@ marketed to similar solo/small-team tradespeople — carpenters, handymen,
 landscapers.
 
 ## Decision: multi-tenant from the start
-Every table gets scoped to a `business_id`, and each business (e.g. a small local contractor's) has its own login. A user's session is tied to exactly one
+Every table gets scoped to a `business_id`, and each business (e.g. a small
+local contractor's) has its own login. A user's session is tied to exactly one
 business/tenant; all queries filter by that tenant.
 - Adds a `businesses` table (id, name, created_at, etc.)
 - Every existing table (clients, projects, bids, subcontractors,
@@ -18,6 +19,107 @@ business/tenant; all queries filter by that tenant.
   tenants), so it's worth a shared helper/middleware pattern rather than
   remembering to add `.where(eq(table.businessId, ...))` by hand in every
   route.
+
+## Access control: USERS and admin scope
+- `USERS` table: `id`, `business_id` (nullable FK), `user_type`
+  (`business` / `global`), `role`, `name`, `email`, `preferred_language`.
+- `user_type` and `role` are deliberately separate fields, not one
+  overloaded field: `user_type` determines *scope* (which business a user
+  is confined to, or whether they operate across all businesses),
+  `role` determines *permission level* within that scope (e.g. owner vs.
+  employee within a business; support vs. super-admin at the global
+  level). Keeping these orthogonal avoids awkward combinations a single
+  field would force together.
+- `business_id` is nullable specifically to represent global-scope users
+  (e.g. platform-level admin/support access across all tenants) — a
+  regular business user always has a `business_id`; a global user does
+  not.
+- This mirrors a real-world pattern from prior device-management work:
+  global admins see across all tenants, tenant-scoped admins/users see
+  only their own tenant's data. The practical implication: no query can
+  rely on a single uniform `WHERE business_id = :current` filter anymore
+  — every route needs an explicit branch for "is this a global user,"
+  since that's exactly the kind of check that's easy to add in one place
+  and forget in another (the same class of bug as a missing
+  authorization check on a single route while a sibling route has it).
+- Every business-scoped table carries `business_id` directly, even where
+  it's technically derivable through a join (e.g. via `client_id` on
+  `PROJECTS`, or via `project_id` on `ATTACHMENTS`). This is a deliberate,
+  uniform rule — no table is the exception that has to be remembered —
+  precisely to guard against the class of bug where an indirect scoping
+  chain gets missed in one code path.
+- `MATERIALS`/pricing data is business-scoped for two independent
+  reasons: (1) the same uniform-consistency principle above, and (2)
+  businesses can have distinct negotiated or special pricing from
+  suppliers that shouldn't be visible to other tenants — this is real
+  business-specific data, not just shared public retail pricing.
+
+## PII encryption approach
+- **Method:** application-level encryption (AES-256-GCM via Node's
+  built-in `crypto` module), not database-level (`pgcrypto`) or a full
+  KMS/envelope-encryption setup. Application-level is the most
+  transparent option for this project's scale — the encryption/decryption
+  logic lives in application code that can be pointed to and explained
+  directly, rather than being implicit in a database extension. A KMS
+  (e.g. AWS KMS) is the right answer at real production scale, but is
+  more infrastructure than this project needs today.
+- **Fields encrypted:** `phone_encrypted`, `email_encrypted`,
+  `address_encrypted` on `CLIENTS` (see "Internationalization /
+  localization" below for `CLIENTS.preferred_language`, a separate,
+  unencrypted field).
+- **Searchability problem:** strong encryption (random IV per value) is
+  non-deterministic — encrypting the same email twice produces different
+  ciphertext, so an encrypted column can't be searched with a direct
+  equality match.
+- **Solution — paired hash columns for exact-match lookup:** alongside
+  each encrypted field that needs to be searchable, store a separate
+  deterministic HMAC-SHA256 hash (e.g. `email_hash`, `phone_hash`), keyed
+  with a secret HMAC key (not a plain hash — plain hashes of low-entropy
+  data like emails are vulnerable to precomputed dictionary attacks).
+  Lookups query the hash column with a normal equality match; the
+  matched row's encrypted field is then decrypted for display/use.
+  Values are normalized (trimmed, lowercased) before hashing so
+  `John@X.com` and `john@x.com` match the same hash.
+- **Matches real usage pattern:** clients are looked up by exact phone
+  number or exact email pulled directly from a text, call, or email
+  thread — never a partial/fuzzy fragment — so exact-match hash lookup
+  covers the real search need. `name` is not encrypted and supports
+  normal fuzzy search (`ILIKE`) directly. `address` is encrypted but not
+  paired with a hash column, since address lookup isn't an anticipated
+  use case — it's stored for display only.
+- **Limitation to note:** this approach only supports exact-match lookup,
+  not partial/fuzzy search, on any encrypted+hashed field. If fuzzy
+  search on an encrypted field is ever needed, this pattern doesn't cover
+  it — searchable encryption schemes exist but are significantly more
+  complex and are considered out of scope for this project's size.
+- **Key management (open item):** where `encryptionKey` and `hmacKey`
+  themselves live is still to be decided — environment variables are the
+  minimal starting point; a secrets manager is worth revisiting if this
+  ever moves toward the V3 multi-business product vision.
+
+## Internationalization / localization
+- Motivated by a real, common scenario: many contractors/subcontractors in
+  the target market speak Spanish primarily, not English.
+- Two distinct concerns, handled differently:
+  - **UI localization** (the app's own interface — labels, buttons, menus):
+    handled via translation files (e.g. i18next, a standard React choice),
+    not stored in the database. `USERS.preferred_language` determines
+    which translation set loads for that user. This is the primary need
+    driving this feature — subcontractors need the app itself to work in
+    their language.
+  - **Content localization** (client-facing data — bid text, project
+    descriptions) existing in multiple languages: NOT built now. Adding
+    `preferred_language` to `CLIENTS` supports a lighter, related need —
+    determining what language client-facing communications (e.g. a bid
+    PDF, an automated notification) are generated in — without taking on
+    the larger, separate problem of storing/maintaining translated
+    versions of arbitrary content. Full content translation (e.g. a bid
+    description existing in both English and Spanish) is a future
+    consideration, not a V1/V2 commitment.
+- Schema impact: `preferred_language` added to both `USERS` (drives UI
+  language) and `CLIENTS` (drives client-facing communication language) —
+  same field name, two different purposes worth keeping distinct when
+  reasoning about the design.
 
 ## Scope tiers
 
@@ -51,7 +153,7 @@ business/tenant; all queries filter by that tenant.
         linked ones) becomes a natural view — full project history per
         client, not just one project at a time.
 - Client PII (contact info) encrypted at rest, masked from anyone but the
-  owner
+  owner — see "PII encryption approach" above for the concrete mechanism
 - Photos in private storage, signed URLs only, EXIF stripped
 
 ### V2 — Near-term additions
@@ -87,7 +189,10 @@ business/tenant; all queries filter by that tenant.
   - Caching design: a `material_prices` table (sku, retailer, price,
     fetched_at); check freshness before re-fetching (e.g. reuse if under
     24-48h old); always surface the price's age in the UI rather than
-    presenting a number as current when it may not be
+    presenting a number as current when it may not be. Business-specific
+    negotiated/special pricing (see "Access control" above) is a known
+    gap to revisit when this moves from manual entry to live API
+    integration.
 - **Mileage tracking** — start with manual entry; design so it can be
   swapped for real GPS tracking or a third-party integration later without
   a schema rework. Feeds into project cost tracking as a cost line, not
@@ -189,3 +294,16 @@ business/tenant; all queries filter by that tenant.
   are validated (no negatives, outlier flags against lookup prices) before
   reaching the calculation — failures surface for review rather than
   silently falling back to a default.
+
+## Known Limitations
+Scope limitation: This system's privacy protections (scrubbing, encryption,
+access control) apply to data once it enters the application. The system
+does not control, and cannot guarantee, what happens to photos or client
+information before that point — e.g., photos taken on a personal device
+before upload, or client-sent images shared directly via text/email outside
+the app. Where feasible (e.g., in-app camera capture), the system will aim
+to minimize exposure before ingestion, but this remains a known boundary of
+the design.
+
+Search limitation: encrypted PII fields paired with a hash column
+(phone, email) only support exact-match lookup, not partial/fuzzy search.
