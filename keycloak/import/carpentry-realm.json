@@ -75,7 +75,7 @@
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "web-app",
+            "included.custom.audience": "web-app",
             "id.token.claim": "false",
             "access.token.claim": "true"
           }
