@@ -17,6 +17,15 @@ services:
   # created later (via POST /api/businesses) are provisioned at runtime through the Admin
   # REST API and only live in carpentry_keycloak_data — see that volume's comment below
   # before running `docker-compose down -v`.
+  #
+  # IMPORTANT (confirmed by hitting this directly): `--import-realm` only creates a client's
+  # nested protocolMappers when the client is first created — editing carpentry-realm.json to
+  # add/change a mapper on a client that already exists in carpentry_keycloak_data and running
+  # `docker compose restart keycloak` (or down/up without -v) does NOT apply it; the client's
+  # top-level fields update, but its mapper list silently doesn't. After editing any client's
+  # `protocolMappers`, do a full `docker compose down -v && docker compose up -d` (and re-run
+  # `npm run db:migrate` in api/, since that also wipes carpentry_pg_data) to force the realm
+  # to be created fresh with the current mapper definitions.
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     restart: unless-stopped
