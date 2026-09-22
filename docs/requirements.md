@@ -324,3 +324,62 @@ Captured to revisit later, not yet scoped into a tier:
 - **Consider a PrimeReact UI template/starter** (e.g. Sakai,
   https://sakai.primereact.org/) as a foundation for the above, rather than
   building the navigation shell and layout conventions from scratch.
+- **Client-facing portal (future, post-MVP)** — view-only for v1: bid/quote
+  status, project timeline, shared photos.
+  - Access model still undecided: invite-only (simpler, likely v1 default)
+    vs. self-registration (later, if product-izing).
+  - One client login could map to one or multiple projects — TBD.
+  - Photos need a "share with client" flag — not all internal job photos
+    should be client-visible.
+  - Timeline: decide if milestones are free-text updates or structured
+    stages (structured is more work but reusable later for scheduling).
+  - A later tier: async threaded comments on milestones/photos, not
+    real-time chat — real-time messaging is a much bigger lift and
+    competes with just texting him directly.
+  - Sequencing: build after internal project tracking/timeline is solid,
+    since the portal mostly surfaces existing state rather than invents
+    new tracking logic.
+- **Historical project import** — todo, needs full scoping. ~12 projects
+  from this year exist only as one-off PDF/Word docs.
+  - Critical constraint: existing bids are already finalized dollar
+    amounts — must NOT be recalculated through the itemized bid engine.
+  - Implies two bid entry modes: "new bid" (itemized, calculated) vs.
+    "historical/recorded bid" (flat total + scope description, locked from
+    recalculation).
+  - At this volume (~12), manual entry via the standard create/edit form
+    is likely faster than building an AI-extraction pipeline; an
+    extraction pipeline could be worth revisiting if this becomes a
+    multi-customer product with a larger backlog.
+  - Still open: how much line-item detail (if any) to capture for
+    historical entries.
+- **Solo-tradesperson UX principles** (cross-cutting, applies to multiple
+  existing features):
+  - Near-zero-friction quick actions for frequent tasks (status updates,
+    expense/receipt logging) — a few-tap ceiling, not a rule for every
+    flow.
+  - Visual-first status indicators: color-coded badges/progress bars
+    instead of text-heavy status lists.
+  - Voice input reprioritized higher rather than left as a late deferred
+    feature, given the on-the-job/hands-dirty use case (see "Mobile +
+    voice input" under V2 above).
+  - Task-scoped linear wizard flows (e.g. new project, generate bid)
+    rather than making the whole app linear — coexists with the dashboard
+    as an overview entry point.
+  - Framed as broadly valuable for solo tradespeople generally — relevant
+    if this becomes a marketable product (see V3).
+- **Before/after photo + marketing feature**:
+  - Photo capture at project start ("clock in") and project end ("clock
+    out") — fits naturally into existing photo storage plans and
+    wizard-style task flows.
+  - Lower-risk tier: just the photo capture itself.
+  - Higher-risk tier: auto-generating captions and posting to
+    social/Google Business — recommend draft-and-approve (one-tap
+    confirm) rather than fully automatic posting, consistent with the
+    app's existing "AI suggests, human confirms" pattern.
+  - Needs a per-project "OK to share publicly" flag for client
+    privacy/consent, since job sites are on clients' property and photos
+    may show identifying details.
+  - Templated captions (neighborhood, job type, canned CTA) achievable
+    without AI; AI-generated caption variation could layer on later.
+  - Google Business Profile likely higher-value/simpler API than Meta for
+    a local tradesperson — worth considering first if this gets built out.
