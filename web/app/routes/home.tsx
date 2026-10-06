@@ -4,11 +4,12 @@ import type { Route } from './+types/home'
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getOptionalSession(request)
-  // Global admins have no business to see a /projects list for — route them to their actual
-  // landing page instead. Anyone else (including a not-yet-logged-in visitor) goes to
-  // /projects, whose own loader (requireBusinessSession) is what actually prompts for login.
+  // Global admins and business users land on different dashboards — see auth.server.ts's
+  // handleLoginCallback for the same split. Anyone else (including a not-yet-logged-in
+  // visitor) goes to /dashboard, whose own loader (requireBusinessSession) is what actually
+  // prompts for login.
   if (session?.roles.includes('global-admin')) {
-    return redirect('/admin/businesses')
+    return redirect('/admin/dashboard')
   }
-  return redirect('/projects')
+  return redirect('/dashboard')
 }

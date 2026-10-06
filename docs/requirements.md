@@ -310,20 +310,35 @@ Search limitation: encrypted PII fields paired with a hash column
 
 ## Open TODOs / Future Considerations
 Captured to revisit later, not yet scoped into a tier:
-- **Navigation/menu system** — a left sidebar is the likely shape, but which
-  entities belong at the top level needs its own discussion per user type;
-  a business user's and a global admin's top-level nav probably shouldn't
-  be the same list.
+- **Navigation/menu system** — left sidebar, decided per user type:
+  - Business user: Dashboard, Projects (Bids nested under individual
+    projects, not top-level), Clients, Subcontractors, Materials, Settings
+    (Users nested inside Settings, likely owner-role-only).
+  - Global admin: Businesses, Users, Settings.
+  - Post-login routing fix landed first (`/dashboard` and `/admin/dashboard`
+    placeholders — see web/app/routes.ts and auth.server.ts's
+    handleLoginCallback) so neither role lands directly on a create form;
+    the full nav/dashboard UI itself is still TODO, pending Sakai below.
+- **Dashboard content** (placeholder routes exist; content still TODO):
+  - Business dashboard: active projects, pending/unsent bids, upcoming
+    project start/end dates, quick-add actions for Project/Client.
+  - Global admin dashboard: total businesses, recently created businesses,
+    anything flagged for admin attention — explicitly *not* any specific
+    business's projects/clients/data.
 - **Global admin as a true super-user** — not just managing the businesses
   list (`/api/businesses`), but able to view/modify data across *all*
   entity types for *any* business, not only its own. This is a superset of
   the "act as business X" impersonation gap already flagged as a known V1
-  limitation in the Keycloak auth work — that was scoped narrowly to
-  business-scoped routes; this is the broader "global admin sees/edits
-  everything" version of the same idea.
-- **Consider a PrimeReact UI template/starter** (e.g. Sakai,
-  https://sakai.primereact.org/) as a foundation for the above, rather than
-  building the navigation shell and layout conventions from scratch.
+  limitation in the Keycloak auth work. Decided shape: impersonation ("act
+  as business X", reusing the existing `scopedTo` tenant-scoping logic)
+  rather than a parallel unrestricted cross-tenant access path — safer and
+  keeps every access auditable as a specific business context, instead of
+  a separate code path that bypasses tenant scoping entirely.
+- **Adopt Sakai** (PrimeReact's official free admin template, MIT-licensed,
+  https://sakai.primereact.org/) as the layout/nav/dashboard foundation,
+  rather than building the navigation shell and layout conventions from
+  scratch. Decided, not just under consideration — hold off on custom
+  nav/dashboard styling until it's integrated, to avoid duplicate work.
 - **Client-facing portal (future, post-MVP)** — view-only for v1: bid/quote
   status, project timeline, shared photos.
   - Access model still undecided: invite-only (simpler, likely v1 default)

@@ -8,8 +8,8 @@ import { createBusiness } from '../lib/api'
 import type { Route } from './+types/admin.businesses'
 
 // Global-admin-only — see requireGlobalSession (lib/auth.server.ts) and
-// api/src/middleware/globalAdmin.ts for the server-side equivalent of this gate. This is the
-// primary V1 login destination (see plan doc): the fastest path to a working test business.
+// api/src/middleware/globalAdmin.ts for the server-side equivalent of this gate. The fastest
+// path to a working test business; no longer the post-login landing page (see /admin/dashboard).
 export async function loader({ request }: Route.LoaderArgs) {
   const { headers } = await requireGlobalSession(request)
   return data({}, { headers })
