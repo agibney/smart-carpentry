@@ -111,13 +111,13 @@ export async function handleLoginCallback(request: Request): Promise<Response> {
   session.set('businessId', businessId)
   session.set('refreshToken', tokens.refresh_token)
 
-  // A global-admin session always lands on /admin/businesses, ignoring returnTo — a
+  // A global-admin session always lands on /admin/dashboard, ignoring returnTo — a
   // global-admin has no business group, so any returnTo pointing at a business-scoped page
   // (e.g. requireBusinessSession redirected here from /projects) would just 403 immediately
   // via requireBusinessSession's own check. Once global-admins can see business-scoped
   // pages too (a "super-admin, access everything" mode — noted as future work, not yet
   // built), this can go back to respecting returnTo unconditionally.
-  const target = roles.includes('global-admin') ? '/admin/businesses' : returnTo !== '/' ? returnTo : '/projects'
+  const target = roles.includes('global-admin') ? '/admin/dashboard' : returnTo !== '/' ? returnTo : '/dashboard'
 
   return redirect(target, {
     headers: [
