@@ -1,9 +1,27 @@
-/* Page-level layout styles ported from the old Nuxt `<style scoped>` blocks. RR7/PrimeReact has
-   no scoped-style equivalent, so these are plain global classes — same names as before. */
+/* App-specific global styles, loaded after PrimeReact, PrimeFlex and Sakai's layout styles
+   (see root.tsx). Page-level classes were ported from the old Nuxt `<style scoped>` blocks —
+   RR7/PrimeReact has no scoped-style equivalent, so they're plain global classes. */
 
-body {
-  margin: 0;
-  padding: 2rem;
+/* Topbar additions on top of Sakai's layout styles (styles/layout/_topbar.scss): an icon in
+   place of Sakai's logo image, and the signed-in user's name next to the Log out button. */
+.layout-topbar .layout-topbar-logo-icon {
+  font-size: 1.75rem;
+  margin-right: 0.5rem;
+  color: var(--primary-color);
+}
+
+.layout-topbar-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color-secondary);
+  padding: 0 0.5rem;
+}
+
+@media (max-width: 991px) {
+  .layout-topbar-user {
+    padding: 1rem;
+  }
 }
 
 .projects-page__header {
@@ -33,7 +51,7 @@ body {
 
 .project-detail-page__fields dt {
   font-weight: 600;
-  color: var(--p-text-muted-color);
+  color: var(--text-color-secondary);
 }
 
 .project-detail-page__fields dd {
@@ -47,7 +65,9 @@ body {
   max-width: 32rem;
 }
 
-.field {
+/* Not `.field` — PrimeFlex defines its own `.field` (margin-bottom + label styles), which would
+   stack on top of the form's `gap` spacing. */
+.form-field {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
@@ -57,8 +77,8 @@ body {
    components — it was written against newer docs/examples that don't match what's in
    package.json. This is the CSS equivalent: every direct-child form control spans the
    field's full width. */
-.field > .p-component,
-.field > input {
+.form-field > .p-component,
+.form-field > input {
   width: 100%;
 }
 

@@ -54,17 +54,17 @@ export default function AdminBusinesses({ actionData }: Route.ComponentProps) {
       </p>
 
       <form className="admin-businesses-form" onSubmit={handleSubmit}>
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="name">Business name</label>
           <InputText id="name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="ownerName">Owner name</label>
           <InputText id="ownerName" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} />
         </div>
 
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="ownerEmail">Owner email</label>
           <InputText id="ownerEmail" type="email" value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} />
         </div>

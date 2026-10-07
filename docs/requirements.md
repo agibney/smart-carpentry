@@ -317,9 +317,12 @@ Captured to revisit later, not yet scoped into a tier:
   - Global admin: Businesses, Users, Settings.
   - Post-login routing fix landed first (`/dashboard` and `/admin/dashboard`
     placeholders — see web/app/routes.ts and auth.server.ts's
-    handleLoginCallback) so neither role lands directly on a create form;
-    the full nav/dashboard UI itself is still TODO, pending Sakai below.
-- **Dashboard content** (placeholder routes exist; content still TODO):
+    handleLoginCallback) so neither role lands directly on a create form.
+  - Sidebar/topbar shell is in place (Sakai, below) — web/app/lib/menu.ts
+    holds each role's menu. Only items whose pages exist are listed; add
+    Clients, Subcontractors, Materials, Settings and Users as they land.
+- **Dashboard content** (Sakai card layout with placeholder tiles exists;
+  content still TODO):
   - Business dashboard: active projects, pending/unsent bids, upcoming
     project start/end dates, quick-add actions for Project/Client.
   - Global admin dashboard: total businesses, recently created businesses,
@@ -337,8 +340,11 @@ Captured to revisit later, not yet scoped into a tier:
 - **Adopt Sakai** (PrimeReact's official free admin template, MIT-licensed,
   https://sakai.primereact.org/) as the layout/nav/dashboard foundation,
   rather than building the navigation shell and layout conventions from
-  scratch. Decided, not just under consideration — hold off on custom
-  nav/dashboard styling until it's integrated, to avoid duplicate work.
+  scratch. Done for the layout shell: Sakai's layout SCSS lives in
+  web/app/styles/layout/, and its topbar/sidebar/menu are ported to React
+  Router in web/app/layout/ (static menu mode only; theme switcher, footer
+  and nested submenus not ported). PrimeFlex comes with it for grid/utility
+  classes.
 - **Client-facing portal (future, post-MVP)** — view-only for v1: bid/quote
   status, project timeline, shared photos.
   - Access model still undecided: invite-only (simpler, likely v1 default)
