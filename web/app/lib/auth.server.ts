@@ -7,6 +7,7 @@ import { decodeJwt } from 'jose'
 import * as client from 'openid-client'
 import { redirect } from 'react-router'
 import { authFlowStorage, sessionStorage, type SessionData } from './session.server'
+import { dashboardPathFor } from './menu'
 
 const KEYCLOAK_BASE_URL = process.env.KEYCLOAK_BASE_URL ?? 'http://localhost:8080'
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM ?? 'carpentry'
@@ -117,7 +118,7 @@ export async function handleLoginCallback(request: Request): Promise<Response> {
   // via requireBusinessSession's own check. Once global-admins can see business-scoped
   // pages too (a "super-admin, access everything" mode — noted as future work, not yet
   // built), this can go back to respecting returnTo unconditionally.
-  const target = roles.includes('global-admin') ? '/admin/dashboard' : returnTo !== '/' ? returnTo : '/dashboard'
+  const target = roles.includes('global-admin') || returnTo === '/' ? dashboardPathFor(roles) : returnTo
 
   return redirect(target, {
     headers: [

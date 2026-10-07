@@ -1,0 +1,41 @@
+// Layout shell styles from Sakai (PrimeReact's free admin template, sakai-react v10.1.0 —
+// https://github.com/primefaces/sakai-react, MIT, see ./LICENSE.md). The partials are copied
+// as-is apart from `@import` → `@use` (Sass has deprecated `@import`). Left out on purpose:
+// _config.scss (styles for Sakai's demo theme-switcher panel, which isn't ported).
+@use 'main';
+@use 'topbar';
+@use 'menu';
+@use 'content';
+@use 'responsive';
+@use 'utils';
+@use 'typography';
+
+@use 'variables' as *;
+
+// Sakai's theme-switcher normally sets this (its default "scale" is 14px); without that panel,
+// set it once here so PrimeReact components and the layout render at Sakai's intended size.
+html {
+    font-size: 14px;
+}
+
+// Our addition, not Sakai's: a collapsed sidebar is only slid off-screen by _responsive.scss,
+// so its links stayed in the tab order (focus would land on invisible items). Hide it from
+// keyboard and screen readers too — delaying `visibility` until the slide-out transition
+// finishes so the animation still plays. Showing it again is instant (the base rule in
+// _menu.scss has no visibility transition).
+@mixin sidebar-hidden {
+    visibility: hidden;
+    transition: transform $transitionDuration, left $transitionDuration, visibility 0s linear $transitionDuration;
+}
+
+@media (min-width: 992px) {
+    .layout-wrapper.layout-static.layout-static-inactive .layout-sidebar {
+        @include sidebar-hidden;
+    }
+}
+
+@media (max-width: 991px) {
+    .layout-wrapper:not(.layout-mobile-active) .layout-sidebar {
+        @include sidebar-hidden;
+    }
+}
