@@ -5,7 +5,8 @@ import { InputText } from 'primereact/inputtext'
 import { InputTextarea } from 'primereact/inputtextarea'
 import { Message } from 'primereact/message'
 import { type FormEvent, useState } from 'react'
-import { data, Link, redirect, useNavigation, useSubmit } from 'react-router'
+import { data, redirect, useNavigation, useSubmit } from 'react-router'
+import { LinkButton } from '../components/link-button'
 import { requireBusinessSession } from '../lib/auth.server'
 import { createProject, getClients } from '../lib/api'
 import { PROJECT_STATUSES, type ProjectStatus } from '../lib/types'
@@ -71,7 +72,7 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
       <h1>New Project</h1>
 
       <form className="create-project-form" onSubmit={handleSubmit}>
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="client">Client</label>
           <Dropdown
             id="client"
@@ -84,12 +85,12 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
           />
         </div>
 
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="title">Title</label>
           <InputText id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="status">Status</label>
           <Dropdown
             id="status"
@@ -99,7 +100,7 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
           />
         </div>
 
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="startDate">Start Date</label>
           <Calendar
             id="startDate"
@@ -109,7 +110,7 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
           />
         </div>
 
-        <div className="field">
+        <div className="form-field">
           <label htmlFor="description">Description</label>
           <InputTextarea
             id="description"
@@ -122,9 +123,7 @@ export default function CreateProject({ loaderData, actionData }: Route.Componen
         {actionData?.error && <Message severity="error" text={actionData.error} />}
 
         <div className="form-actions">
-          <Link to="/projects">
-            <Button type="button" label="Cancel" severity="secondary" text />
-          </Link>
+          <LinkButton to="/projects" label="Cancel" severity="secondary" text />
           <Button type="submit" label="Create Project" loading={submitting} />
         </div>
       </form>

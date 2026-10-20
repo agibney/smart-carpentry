@@ -1,7 +1,7 @@
-import { Button } from 'primereact/button'
 import { Card } from 'primereact/card'
 import { Tag } from 'primereact/tag'
-import { data, Link } from 'react-router'
+import { data } from 'react-router'
+import { LinkButton } from '../components/link-button'
 import { requireBusinessSession } from '../lib/auth.server'
 import { getProject } from '../lib/api'
 import { projectStatusSeverity } from '../lib/project-status'
@@ -22,9 +22,7 @@ export default function ProjectDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="project-detail-page">
-      <Link to="/projects">
-        <Button label="Back to Projects" icon="pi pi-arrow-left" text />
-      </Link>
+      <LinkButton to="/projects" label="Back to Projects" icon="pi pi-arrow-left" text />
 
       <Card
         title={

@@ -1,8 +1,8 @@
-import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Tag } from 'primereact/tag'
-import { data, Link } from 'react-router'
+import { data } from 'react-router'
+import { LinkButton } from '../components/link-button'
 import { requireBusinessSession } from '../lib/auth.server'
 import { getProjects } from '../lib/api'
 import { projectStatusSeverity } from '../lib/project-status'
@@ -26,9 +26,7 @@ export default function ProjectsIndex({ loaderData }: Route.ComponentProps) {
     <div className="projects-page">
       <div className="projects-page__header">
         <h1>Projects</h1>
-        <Link to="/projects/create">
-          <Button label="New Project" icon="pi pi-plus" />
-        </Link>
+        <LinkButton to="/projects/create" label="New Project" icon="pi pi-plus" />
       </div>
 
       <DataTable value={projects} dataKey="id">
@@ -46,9 +44,7 @@ export default function ProjectsIndex({ loaderData }: Route.ComponentProps) {
           header=""
           style={{ width: '6rem' }}
           body={(data: Project) => (
-            <Link to={`/projects/${data.id}`}>
-              <Button icon="pi pi-eye" text rounded aria-label="View project" />
-            </Link>
+            <LinkButton to={`/projects/${data.id}`} icon="pi pi-eye" text rounded aria-label="View project" />
           )}
         />
       </DataTable>

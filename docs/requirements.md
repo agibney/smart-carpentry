@@ -317,9 +317,12 @@ Captured to revisit later, not yet scoped into a tier:
   - Global admin: Businesses, Users, Settings.
   - Post-login routing fix landed first (`/dashboard` and `/admin/dashboard`
     placeholders — see web/app/routes.ts and auth.server.ts's
-    handleLoginCallback) so neither role lands directly on a create form;
-    the full nav/dashboard UI itself is still TODO, pending Sakai below.
-- **Dashboard content** (placeholder routes exist; content still TODO):
+    handleLoginCallback) so neither role lands directly on a create form.
+  - Sidebar/topbar shell is in place (Sakai, below) — web/app/lib/menu.ts
+    holds each role's menu. Only items whose pages exist are listed; add
+    Clients, Subcontractors, Materials, Settings and Users as they land.
+- **Dashboard content** (Sakai card layout with placeholder tiles exists;
+  content still TODO):
   - Business dashboard: active projects, pending/unsent bids, upcoming
     project start/end dates, quick-add actions for Project/Client.
   - Global admin dashboard: total businesses, recently created businesses,
@@ -337,8 +340,27 @@ Captured to revisit later, not yet scoped into a tier:
 - **Adopt Sakai** (PrimeReact's official free admin template, MIT-licensed,
   https://sakai.primereact.org/) as the layout/nav/dashboard foundation,
   rather than building the navigation shell and layout conventions from
-  scratch. Decided, not just under consideration — hold off on custom
-  nav/dashboard styling until it's integrated, to avoid duplicate work.
+  scratch. Done for the layout shell: Sakai's layout SCSS lives in
+  web/app/styles/layout/, and its topbar/sidebar/menu are ported to React
+  Router in web/app/layout/ (static menu mode only; theme switcher, footer
+  and nested submenus not ported). PrimeFlex comes with it for grid/utility
+  classes.
+- **PrimeReact 11 upgrade** — todo, needs scoping. web/ is on PrimeReact
+  10.9.x (v10 still maintained as `v10-stable`); v11 has been `latest`
+  since July 2026 and requires React 19 (already met). Do it as its own
+  deliberate migration, not piecemeal:
+  - Sakai React was never updated past PrimeReact 10 (last upstream change
+    Oct 2024), so the ported layout (web/app/layout/, web/app/styles/layout/)
+    is ours to migrate — no upstream Sakai v11 to diff against.
+  - Theme CSS variables change naming (v11's `--p-*` style vs v10's
+    `--text-color` / `--surface-*`) — affects Sakai's SCSS and app.css.
+  - web/app/components/link-button.tsx reuses PrimeReact's internal Button
+    class names (`p-button`, `p-button-text`, ...) — re-check them.
+  - Decide PrimeFlex's future at the same time (unmaintained since early
+    2025; Tailwind is the ecosystem default) since it's tied to Sakai's
+    grid/utility classes.
+  - Until then, read the v10 docs (https://v10.primereact.org/) — v11 docs
+    and examples (e.g. the `fluid` prop, `--p-*` variables) don't apply.
 - **Client-facing portal (future, post-MVP)** — view-only for v1: bid/quote
   status, project timeline, shared photos.
   - Access model still undecided: invite-only (simpler, likely v1 default)
